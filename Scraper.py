@@ -73,12 +73,11 @@ class Scraper():
         with open(local_destination, 'wb+') as f:
             f.write(response.content)
 
+    def browse_back(self):    # need this? 
+
+'''
 if __name__ == '__main__':
     # EXAMPLE USAGE
     bot = Scraper()
     bot.driver.get('https://www.google.com')
-
-#%%
-#bot.driver.quit()
-
-# %%
+'''
