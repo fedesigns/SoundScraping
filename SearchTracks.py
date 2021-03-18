@@ -18,46 +18,43 @@ class SearchTracks(artist_name):
         # self.items = # store all selenium web elements here? or extract later?
 
         sleep(1)  #leave time to load, then scroll down a few times to load all tracks
-        scraper.scroll()
+        scraper.scroll(0, 100000)
+        sleep(1)
+        scraper.scroll(0, 100000)
+        sleep(1)
+        scraper.scroll(0, 100000)
 
     
     def get_artist_info(self):
         '''
         Extracts information about the artist
         '''
+        
         artist_name = 
         artist_bio = 
         artist_location = 
         artist_followers = 
 
-    def get_track_items(self):
+
+    def get_tracks(self, track_items):    # take track as input?
         '''
-        Extracts all items in the HTML tree that contain 'soundList' information,
-        one node per track 
+        This function extracts all items in the HTML tree that contain 'soundList' information, 
+        then iterates through all elements in an artist's page that contain track titles and URLs, 
+        extracts these two features, and stores them in lists in a dictionary
         '''
+
         track_items = scraper.driver.find_elements_by_xpath('//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/[@class="soundList__item"')
         # could also use find_element_by_class_name()
 
-    def get_track_info(self, track_items):    # take track as input?
-        '''
-        This function iterates through all elements in an artist's page that contain track titles and URLs, 
-        extracts these two features, and stores them in a dictionary
-        '''
-        for track_item in track_items:
-            track_href = track_items[track].find_element_by_tag_name("a").get_attribute('href')
-            track_url = "https://www.soundcloud.com" + track_href
-        
-        track_info = {track:'' }
-
+        artist_tracks = {'track_name': [], 'track_url': []}
+        for i in track_items:
+            title_element = track_items[i].find_element_by_class_name("soundTitle__title sc-link-dark").
+            track_href = title_element.get_attribute('href')
+            track_url = "https://www.soundcloud.com" + track_href # concatenating domain and href
+            track_name = title_element.find_element_by_tag_name('span').text
+            artist_tracks['track_name'].append(track_name)  # add track ids?
+            artist_tracks['track_url'].append(track_url)
 
         # track_urls = scraper.driver.find_elements_by_xpath('//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[1]/div/div/div[2]/div[1]/div/div/div[2]/a')   # find element or elements?
 
-    def get_track_name(self): # not needed if we just get names and urls from same elements?
-//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[2]
 
-        "/html/body/div[2]/div[2]/div[2]/div/div[4]/div[1]/div/div[2]/div/ul/li[2]/div/div/div[2]/div[1]/div/div/div[2]/a/span"
-        /html/body/div[2]/div[2]/div[2]/div/div[4]/div[1]/div/div[2]/div/ul/li[1]/div/div/div[2]/div[1]/div/div/div[2]/a
-        /html/body/div[2]/div[2]/div[2]/div/div[4]/div[1]/div/div[2]/div/ul/li[2]/div/div/div[2]/div[1]/div/div/div[2]/a
-        "//*[@id='content']/div/div[4]/div[1]/div/div[2]/div/ul/li[1]/div/div/div[2]/div[1]/div/div/div[2]/a"
-        "//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[2]/div/div/div[2]/div[1]/div/div/div[2]/a"
-    
