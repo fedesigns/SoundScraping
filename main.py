@@ -25,6 +25,8 @@ import Scraper
 import SearchTracks
 # import TrackInfo
 import pandas as pd
+from datetime import datetime
+
 
 ## reading dataframes: artists from my Spotify, comments from soundcloud, track information
 artists_df = pd.read_csv('Artists.csv')
@@ -39,18 +41,17 @@ print(artists_df.head())
 
 ## scraping the soundcloud page for each artist
 ### move driver calls here to avoid quitting and restarting each time?
-
+#try:
 for i in range(artists_df['ArtistName'].count()):
 
     artist = artists_df.iloc[i, 0]
     print(artist)
 
     searcher = SearchTracks.SearchTracks(artist)
-
     searcher.scrape_page()
 
+    ## getting artist information
     searcher.get_artist_info()
-
     keys = list(searcher.artist_info.keys())
     print(keys)
     ## adding scraped data to our Artist dataframe
@@ -58,11 +59,21 @@ for i in range(artists_df['ArtistName'].count()):
         print(keys[k])
         artists_df[keys[k]][i] = searcher.artist_info[keys[k]]
 
-    searcher.scraper.driver.quit()
 
-    print(artists_df.head())
+    ## getting track names and URLs
 
 
+    # searcher.scraper.driver.quit()
+    # print(artists_df.head())
+
+now = datetime.now()
+print(artists_df.head())
+artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+
+#saving scraped data if error occurs
+#except:
+ #   now = datetime.now()
+  #  artists_df.to_csv('Artists_{f}.csv'.format(now.strftime("%d/%m/%Y_%H:%M:%S")))
 
 ### create temporary dfs inside functions/loop and append those to main ones?
 ### handling NaN? nee to add them manually?
