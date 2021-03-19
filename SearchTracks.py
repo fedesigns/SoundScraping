@@ -30,10 +30,24 @@ class SearchTracks(artist_name):
         Extracts information about the artist
         '''
         
-        artist_name = 
-        artist_bio = 
-        artist_location = 
-        artist_followers = 
+        # getting a string containing 'XXX,XXX followers' and cleaning it to save an integer in the dict
+        followers_string = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[1]/a').get_attribute('title')
+        followers_strings = followers_string.split()
+        followers = ''
+        if len(followers_strings[0]) > 3:
+            followers_string = followers_strings[0].split(',')
+            for s in followers_string:    ### need to use range()?
+                followers += followers_string[s]
+            followers = int(followers)
+        else: 
+            followers = int(followers_strings[0])
+
+        artist_info['followers'].append(followers)
+
+        profile_image_url = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[1]/div/span')
+        profile
+
+        cover_image_url = 
 
 
     def get_tracks(self, track_items):    # take track as input?
