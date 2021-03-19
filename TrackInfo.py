@@ -28,4 +28,8 @@ class TrackInfo():
         artist_bio = 
         artist_location = 
         artist_followers
+        
 
+        ### need a lot of scrolling to load all comments
+
+        ### include replies in same comment? or separate object?

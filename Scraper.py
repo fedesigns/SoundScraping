@@ -13,7 +13,7 @@ import requests
 
 max_time = 10
 
-class Scraper():
+class Scraping():
 
     '''
     This class streamlines the creation of scraping bots. Adapted from Bots.py from https://github.com/life-efficient/bots/blob/master/bot.py
@@ -73,11 +73,23 @@ class Scraper():
         with open(local_destination, 'wb+') as f:
             f.write(response.content)
 
-    def browse_back(self):    # need this? 
+    # def browse_back(self):    # need this? 
 
-'''
-if __name__ == '__main__':
-    # EXAMPLE USAGE
-    bot = Scraper()
-    bot.driver.get('https://www.google.com')
-'''
+    '''
+    if __name__ == '__main__':
+        # EXAMPLE USAGE
+        bot = Scraper()
+        bot.driver.get('https://www.google.com')
+    '''
+
+    '''
+    can also scroll down using:
+    time.sleep(5)
+        elem = driver.find_element_by_tag_name(“body”)
+        no_of_pagedowns = 8
+    while no_of_pagedowns:
+            elem.send_keys(Keys.PAGE_DOWN)
+            time.sleep(1)
+            no_of_pagedowns-=1
+
+    '''

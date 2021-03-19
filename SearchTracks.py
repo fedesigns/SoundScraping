@@ -1,4 +1,4 @@
-import Scraper
+from Scraper.Scraping import Scraping
 import pandas as pd
 
 
@@ -7,16 +7,16 @@ class SearchTracks():
     This class launches the search for all tracks of a given artist or label on SoundCloud.
     '''
     
-    def __init__(self, artist_name):
+    def __init__(self, artist_input):
         '''
         Initialises the class
         '''
-        self.scraper = Scraper()
-        self.artist_name = artist_name
+        self.scraper = Scraping()
+        self.artist_name = artist_input
         
         # Dictionaries storing the data we ultimately want to scrape
-        self.artist_info = {'name': [], 'bio': [], 'location': [], 'followers': [], 'profile_image_url': [], 'background_image_url': []} # declaring dictionary to store info
-        self.artist_tracks = {'track_name': [], 'track_url': []}
+        self.artist_info = {'ArtistName': None, 'Bio': None, 'Location': None, 'Followers': None, 'ProfileImageURL': None, 'BackgroundImageURL': None} # declaring dictionary to store info
+        self.artist_tracks = {'TrackName': None, 'TrackURL': None}
 
 
         ### can all of these run inside init function or should they be a separate method?
@@ -38,12 +38,12 @@ class SearchTracks():
         self.artist_items = scraper.driver.get(artist_url_no_space)
 
         try:
-            if scraper.driver.find_element_by_class_name("errorTitle").text == "We can't find that user."
+            if scraper.driver.find_element_by_class_name("errorTitle").text == "We can't find that user.":
                 self.artist_items = scraper.driver.get(artist_url_dashes)
-            else:
-                continue
+
+
         except:
-            continue
+            self.artist_items = scraper.driver.get(artist_url_no_space)
 
         # self.items = # store all selenium web elements here? or extract later?
 
@@ -66,14 +66,14 @@ class SearchTracks():
         Extracts information about the artist and stores it in a dictionary
         '''
         
-        name = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h3'.text
-        self.artist_info['name'].append(name)
+        name = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h3').text
+        self.artist_info['ArtistName'] = name
         
         bio = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/div[1]/div/div/div/div/p').text
-        self.artist_info['bio'].append(bio)
+        self.artist_info['Bio'] = bio
 
         location = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[1]').text
-        self.artist_info['location'].append(location)
+        self.artist_info['Location'] = location
 
         # getting a string containing 'XXX,XXX followers' and cleaning it to save an integer in the dict
         followers_string = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[1]/a').get_attribute('title')
@@ -86,19 +86,19 @@ class SearchTracks():
             followers = int(followers)
         else: 
             followers = int(followers_strings[0])
-        self.artist_info['followers'].append(followers)
+        self.artist_info['Followers'] = followers
 
         # getting a string containing image metadata, splitting it at '"', to save the url in the dict
         profile_image_string = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[1]/div/span').get_attribute('style')
         profile_image_strings = profile_image_string.split('"')
         profile_image_url = profile_image_strings[1]
-        self.artist_info['profile_image_url'].append(profile_image_url)
+        self.artist_info['ProfileImageURL'] = profile_image_url
 
         # getting a string containing background image metadata, splitting it at '(',')' to obtain its url
         background_image_string = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div').get_attribute('style')
         background_image_strings = background_image_string.split(')')
         background_image_url = background_image_strings[0].split('(')[1]  ### will this work in one line?
-        self.artist_info['background_image_url'].append(background_image_url)
+        self.artist_info['BackgroundImageURL'] = background_image_url
 
         # need return?
         
@@ -119,8 +119,8 @@ class SearchTracks():
             track_url = "https://www.soundcloud.com" + track_href # concatenating domain and href
             track_name = title_element.find_element_by_tag_name('span').text
             
-            self.artist_tracks['track_name'].append(track_name)  # add track ids?
-            self.artist_tracks['track_url'].append(track_url)
+            self.artist_tracks['TrackName'] = track_name  # add track ids?
+            self.artist_tracks['TrackURL'] = track_url
 
         # track_urls = scraper.driver.find_elements_by_xpath('//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[1]/div/div/div[2]/div[1]/div/div/div[2]/a')   # find element or elements?
 
