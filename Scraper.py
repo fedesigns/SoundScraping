@@ -1,4 +1,3 @@
-#%% 
 from selenium import webdriver
 import json
 from selenium.webdriver.chrome.options import Options
@@ -13,7 +12,7 @@ import requests
 
 max_time = 10
 
-class Scraping():
+class Scraper():
 
     '''
     This class streamlines the creation of scraping bots. Adapted from Bots.py from https://github.com/life-efficient/bots/blob/master/bot.py

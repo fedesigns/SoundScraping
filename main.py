@@ -22,26 +22,28 @@ Further work will include:
 '''
 #%%
 import Scraper
-from SearchTracks import SearchTracks
+import SearchTracks
 # import TrackInfo
 import pandas as pd
 
 ## reading dataframes: artists from my Spotify, comments from soundcloud, track information
-artists_df = pd.read_csv('Artists.csv', index_col=False)
+artists_df = pd.read_csv('Artists.csv')
 comments_df = pd.read_csv('Comments.csv', index_col=False)
 tracks_df = pd.read_csv('Tracks.csv', index_col=False)
 
-#print(artists_df.head())
+print(artists_df.head())
 #print(comments_df.head())
 #print(tracks_df.head())
 ## accessing files to store scraped data
 #%%
 
 ## scraping the soundcloud page for each artist
-### does iteration work like this?
+### move driver calls here to avoid quitting and restarting each time?
+
 for i in range(artists_df['ArtistName'].count()):
 
     artist = artists_df.iloc[i, 0]
+    print(artist)
 
     searcher = SearchTracks.SearchTracks(artist)
 
@@ -49,12 +51,16 @@ for i in range(artists_df['ArtistName'].count()):
 
     searcher.get_artist_info()
 
+    keys = list(searcher.artist_info.keys())
+    print(keys)
     ## adding scraped data to our Artist dataframe
-    for col in searcher.artist_info.keys():
-        artists_df[i][col] = searcher.artist_info[col]
+    for k in range(len(keys)):
+        artists_df.loc[[i],[k]] = searcher.artist_info[keys[k]]
 
+    searcher.scraper.driver.quit()
 
-print(artists_df.head())
+    print(artists_df.head())
+
 
 
 ### create temporary dfs inside functions/loop and append those to main ones?
