@@ -39,15 +39,30 @@ class SearchTracks():
         self.artist_items = self.scraper.driver.get(self.artist_url_dashes)
 
         try:
-            if scraper.driver.find_element_by_class_name("errorTitle").text == "We can't find that user.":
+            ## checking if it's not an error page
+            self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h3')
+            
+            ## checking if we didn't land on a fake profile
+            followers_string_test = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[1]/a').get_attribute('title')
+            print(followers_string_test[0])
+            followers_strings_test = followers_string_test.split()
+             
+            if len(followers_strings_test[0]) < 4:
                 self.artist_items = self.scraper.driver.get(self.artist_url_no_space)
-
+            
+            print('here at try')
 
         except:
-            self.artist_items = self.scraper.driver.get(self.artist_url_dashes)
+            self.artist_items = self.scraper.driver.get(self.artist_url_no_space)
+            print(self.artist_url_no_space)
+            print(self.artist_items)
+            print('looking for tracks')
+            sleep(2)
+            #self.artist_items = self.scraper.driver.get(self.artist_url_dashes)
 
         # self.items = # store all selenium web elements here? or extract later?
-
+        # except:
+          #  print("There was an error searching for {f}'s page".format(artist_name))
 
         sleep(1)  #leave time to load, then scroll down a few times to load all tracks
         self.scraper.scroll(0, 100000)  ### reduce distance? will it give errors if too far?
@@ -60,6 +75,7 @@ class SearchTracks():
         sleep(1)
         self.scraper.scroll(0, 100000)
         sleep(1)
+        print('here')
 
 
         ### ADD if/Else FOR THE TWO TYPES OF ARTIST NAME ENTRIES INTO URL STRING
@@ -74,13 +90,21 @@ class SearchTracks():
         #self.artist_info['ArtistName'] = name
         #print('Name', name)
 
-        bio = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/div[1]/div/div/div/div/p').text
-        self.artist_info['Bio'] = bio
-        print('Bio', bio)
+        try:
+            bio = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/div[1]/div/div/div/div/p').text
+            self.artist_info['Bio'] = bio
+            print('Bio', bio)
+        except:
+            print('No bio found')
 
-        location = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[2]').text
-        self.artist_info['Location'] = location
-        print(location, 'Location')
+        #collecting the information in the header and subheader. can contain location, artist name, 'pro unlimited'
+        try:
+            subheader = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[2]').text
+            header = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[1]').text
+            self.artist_info['Location'] = header + "" + subheader
+            print(location, 'Location')
+        except:
+            print("no location found")
 
         # getting a string containing 'XXX,XXX followers' and cleaning it to save an integer in the dict
         followers_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[1]/a').get_attribute('title')
@@ -93,23 +117,27 @@ class SearchTracks():
             followers = int(followers)
         else: 
             followers = int(followers_strings[0])
-        self.artist_info['Followers'] = followers
+        self.artist_info['Followers'] = int(followers)
         print(followers, 'Followers')
 
         # getting a string containing image metadata, splitting it at '"', to save the url in the dict
-        profile_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[1]/div/span').get_attribute('style')
-        profile_image_strings = profile_image_string.split('"')
-        profile_image_url = profile_image_strings[1]
-        self.artist_info['ProfileImageURL'] = profile_image_url
-        print(profile_image_url, 'Profile Image URL')
-
+        try:
+            profile_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[1]/div/span').get_attribute('style')
+            profile_image_strings = profile_image_string.split('"')
+            profile_image_url = profile_image_strings[1]
+            self.artist_info['ProfileImageURL'] = profile_image_url
+            print(profile_image_url, 'Profile Image URL')
+        except:
+            print('no profile image')
         # getting a string containing background image metadata, splitting it at '(',')' to obtain its url
-        background_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div').get_attribute('style')
-        background_image_strings = background_image_string.split(')')
-        background_image_url = background_image_strings[0].split('(')[1]  ### will this work in one line?
-        self.artist_info['BackgroundImageURL'] = background_image_url
-        print(background_image_url, 'BackgroundImageURL')
-
+        try:
+            background_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div').get_attribute('style')
+            background_image_strings = background_image_string.split(')')
+            background_image_url = background_image_strings[0].split('(')[1]  ### will this work in one line?
+            self.artist_info['BackgroundImageURL'] = background_image_url
+            print(background_image_url, 'BackgroundImageURL')
+        except:
+            print('no background image')
         # need return?
         
 

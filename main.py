@@ -55,7 +55,8 @@ for i in range(artists_df['ArtistName'].count()):
     print(keys)
     ## adding scraped data to our Artist dataframe
     for k in range(len(keys)):
-        artists_df.loc[[i],[k]] = searcher.artist_info[keys[k]]
+        print(keys[k])
+        artists_df[keys[k]][i] = searcher.artist_info[keys[k]]
 
     searcher.scraper.driver.quit()
 
