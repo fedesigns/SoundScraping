@@ -61,7 +61,7 @@ for i in range(artists_df['ArtistName'].count()):
 
 
     ## getting track names and URLs
-    searcher.get_artist_tracks()
+    searcher.get_artist_tracks(tracks_df, comments_df)
     
     #track_list = searcher.artist_tracks['TrackName']
     #track_url_list = 

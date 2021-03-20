@@ -39,6 +39,7 @@ class SearchTracks():
 
         try:
             ## checking if it's not an error page
+            sleep(1)
             self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h3')
             
             ## checking if we didn't land on a fake profile
@@ -159,9 +160,14 @@ class SearchTracks():
         # print(len(track_items))
 
        
-        for t in range(len(track_items)):
+        for t in range(len(track_items)): ### FIX THIS LOOP. separate search for tracks and scraping of each track, or just go back to search page each time
             
             # sleep(1)
+
+            ## if not the first iteration, go back to track page before opening next one
+            if t > 0:
+                self.scraper.driver.execute_script("window.history.go(-1)")
+                sleep(1)
 
             print(f'track {t+1}')
             #title_element = track_items[i].find_element_by_class_name("soundTitle__title sc-link-dark")  ### index using get() instead? may have to find_element_by_xpath() and update li[] index within xpath at each loop iteration
@@ -172,9 +178,11 @@ class SearchTracks():
 
             print(f'got title element {t+1}')
             track_href = title_element.get_attribute('href')
-            track_url = "https://www.soundcloud.com" + track_href # concatenating domain and href
+            track_url = track_href # need to concatenate domain and href? eg "https://www.soundcloud.com" + 
             track_name = title_element.find_element_by_tag_name('span').text
-            
+        
+        ##for t in range(len(track_items)):
+
             # storing the data in the track's dict
             self.track_dict = {
                                 'TrackName': None, 
@@ -212,9 +220,7 @@ class SearchTracks():
             self.scraper.driver.get(track_url)
             sleep(1)
             
-            ### FILL WITH PATHS
-
-            ## finding track description
+            ## finding track description. WORKS
             try: 
                 description_element = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[2]/div/div/div/div[1]/div/p[1]')
                 track_description = description_element.text
@@ -223,7 +229,7 @@ class SearchTracks():
             except:
                 print('No track description')
 
-            ## finding likes
+            ## finding likes. WORKS
             try:
                 likes_element = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[3]/div[1]/div/div[1]/div/div/div[2]/ul/li[2]')
                 likes_string = likes_element.get_attribute('title')
@@ -235,55 +241,57 @@ class SearchTracks():
             except:
                 print('No likes found')
 
-            ## finding shares
-            try:
-                shares_element = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[3]/div[1]/div/div[1]/div/div/div[2]/ul/li[3]/a/span[2]')
-                shares = shares_element.text
-                shares_strings = shares_string.split()
-                shares_digits = shares_strings[0].split(',')
-                likes = "".join(shares_digits)
-                self.track_dict['Shares'] = shares
-                print('Shares: ', shares)
-            except:
-                print('No shares found')
+            ## finding shares. ERROR
+            #try:
+            shares_element = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[3]/div[1]/div/div[1]/div/div/div[2]/ul/li[3]/a/span[2]')
+            shares = shares_element.text
+            shares_strings = shares_string.split()
+            shares_digits = shares_strings[0].split(',')
+            likes = "".join(shares_digits)
+            self.track_dict['Shares'] = shares
+            print('Shares: ', shares)
+            #except:
+            #    print('No shares found')
 
-            ## finding plays
-            try: 
-                plays_el = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[3]/div[1]/div/div[1]/div/div/div[2]/ul/li[1]/span/span[1]')
-                plays = plays_el.text
-                plays_strings = plays_string.split()
-                plays_digits = plays_strings[0].split(',')
-                likes = "".join(plays_digits)                
-                self.track_dict['Plays'] = plays
-                print('Plays: ', plays)
-            except:
-                print('No plays found')
+            ## finding plays. ERROR
+            #try: 
+            plays_el = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[3]/div[1]/div/div[1]/div/div/div[2]/ul/li[1]/span/span[1]')
+            plays = plays_el.text
+            plays_strings = plays_string.split()
+            plays_digits = plays_strings[0].split(',')
+            likes = "".join(plays_digits)                
+            self.track_dict['Plays'] = plays
+            print('Plays: ', plays)
+            #except:
+            #    print('No plays found')
 
-            ## finding the URL of the track's image
-            try:
-                image_el = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div[1]/div/div/div/span') ### need to add splitting code
-                image_string = image_el.get_attribute('style')
-                image_strings = image_string.split('")')
-                track_image_url = track_image_strings[0].split('("')[1]  ### will this work in one line?
-                self.track_dict['TrackImageURL'] = track_image_image
-            except:
-                print('No image found')
+            ## finding the URL of the track's image. ERROR
+            #try:
+            image_el = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div[1]/div/div/div/span') ### need to add splitting code
+            image_string = image_el.get_attribute('style')
+            image_strings = image_string.split('")')
+            track_image_url = track_image_strings[0].split('("')[1]  ### will this work in one line?
+            self.track_dict['TrackImageURL'] = track_image_image
+            #except:
+            #    print('No image found')
 
-            ## finding the date of release (posting)
-            try:
-                release_date_el = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div[3]/div/time')
-                release_datetime = release_date_el.get_attribute('datetime')
-                self.track_dict['TrackDate'] = release_datetime
-            except:
-                print('No release date found')
+            ## finding the date of release (posting). WORKS?
+            #try:
+            release_date_el = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div[3]/div/time')
+            release_datetime = release_date_el.get_attribute('datetime')
+            self.track_dict['TrackDate'] = release_datetime
+            print(release_datetime)
+            #except:
+            #    print('No release date found')
 
-            ## finding soundcloud tags
-            try:
-                tags_els = self.scraper.driver.find_elements_by_class_name("sc-truncate sc-tagContent") ### may have to use path not element?
-                tags = ", ".join([tags_els[n].text for n in range(len(tags_els))])
-                self.track_dict['Tags'] = tags
-            except:
-                print('No tags found')
+            ## finding soundcloud tags. WORKS?
+            #try:
+            tags_els = self.scraper.driver.find_elements_by_class_name("sc-truncate sc-tagContent") ### may have to use path not element?
+            tags = ", ".join([tags_els[n].text for n in range(len(tags_els))])
+            self.track_dict['Tags'] = tags
+            print(tags)
+            #except:
+            #    print('No tags found')
 
 
             ## scraping comments data. scroll to load all comments
@@ -300,87 +308,90 @@ class SearchTracks():
             sleep(1)
             
             ## getting comments
-            try: 
-                # comment_items = self.scraper.driver.find_elements_by_class_name()
-                # may have to use e.g.: 
-                comment_items = '//ul/[@class="commentsList__item"]/li'  ### do we need to go one level up?
-                # self.scraper.driver.find_elements_by_xpath('//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/[@class="soundList__item"')
-                # could also use find_element_by_class_name()
-                print('got {} comments!'.format(len(track_items)))
-                self.track_dict['CommentsCount'] = len(comment_items)    
-        
-                for c in range(len(comment_items)):
-                    
-                    ### GET CORRECT PATH
-                    # define comment element here or go straight to sub elements below?        
+            #try: 
+            # comment_items = self.scraper.driver.find_elements_by_class_name()
+            # may have to use e.g.: 
+            comment_items = '//ul/[@class="commentsList__item"]/li'  ### do we need to go one level up?
+            # self.scraper.driver.find_elements_by_xpath('//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/[@class="soundList__item"')
+            # could also use find_element_by_class_name()
+            print('got {} comments!'.format(len(track_items)))
+            self.track_dict['CommentsCount'] = len(comment_items)    
+    
+            for c in range(len(comment_items)):
+                
+                ### GET CORRECT PATH
+                # define comment element here or go straight to sub elements below?        
 
-                    # creating a dictionary to store information about each particular comment
-                    self.comment_dict = {
-                                    'Comment': None, 
-                                    'CommentDateTime': None, 
-                                    'TrackTime': None,
-                                    'TrackName': track_name,
-                                    'TrackURL': track_url
-                                    }
+                # creating a dictionary to store information about each particular comment
+                self.comment_dict = {
+                                'Comment': [], 
+                                'CommentDateTime': [], 
+                                'TrackTime': [],
+                                'TrackName': [track_name],
+                                'TrackURL': [track_url]
+                                }
 
-                    ### FILL WITH PATHS
+                ### FILL WITH PATHS
 
-                    ## finding comment text
-                    try: 
-                        comment_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/div/span/p')
-                        comment = comment_el.text 
-                        self.comment_dict['Comment'] = comment
-                        print('Comment: ', comment)
-                    except:
-                        print('No comment text found')
+                ## finding comment text
+                try: 
+                    comment_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/div/span/p')
+                    comment = comment_el.text 
+                    self.comment_dict['Comment'].append(comment)
+                    print('Comment: ', comment)
+                except:
+                    print('No comment text found')
 
-                    ## finding comment date and time
-                    try: 
-                        datetime_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[2]/span/time')
-                        comment_datetime = datetime_el.get_attribute("datetime")
-                        self.comment_dict['Comment'] = comment_datetime
-                        print('Posted on: ', comment_datetime)
-                    except:
-                        print('No comment text found')
+                ## finding comment date and time
+                try: 
+                    datetime_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[2]/span/time')
+                    comment_datetime = datetime_el.get_attribute("datetime")
+                    self.comment_dict['Comment'].append(comment_datetime)
+                    print('Posted on: ', comment_datetime)
+                except:
+                    print('No comment text found')
 
-                    ## finding the time of the track that the comment was posted at
-                    try:
-                        track_time_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/span/span/a')
-                        track_time = track_time_el.text
-                        self.comment_dict['TrackTime'] = track_time
-                        print('At track time: ', track_time)
-                    except:
-                        print('No tracktime found')
-                    
-                    ## creating df from comments dict and appending it to original comments df
-                    temp_comments_df = pd.DataFrame(self.comment_dict)
-                    comments_df = comments_df.append(temp_comments_df, ignore_index=True)
+                ## finding the time of the track that the comment was posted at
+                try:
+                    track_time_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/span/span/a')
+                    track_time = track_time_el.text
+                    self.comment_dict['TrackTime'].append(track_time)
+                    print('At track time: ', track_time)
+                except:
+                    print('No tracktime found')
+                
+                ### ERROR BELOW HERE? 
+
+                ## creating df from comments dict and appending it to original comments df
+                temp_comments_df = pd.DataFrame.from_dict(self.comment_dict)
+                comments_df = comments_df.append(temp_comments_df, ignore_index=True)
 
 
-                ## trying to infer whether the music is a set or a track by looking at its last comment.
-                ## soundcloud hides the duration element somehow as part of the waveform graphic.
-                ## so we look at the lask comment in the track's timeline.
-                ## If it's more that 15' into the track, we assume the sound to be a set.
-                ## We will only search for tracks, not sets, on Beatport
+            ## trying to infer whether the music is a set or a track by looking at its last comment.
+            ## soundcloud hides the duration element somehow as part of the waveform graphic.
+            ## so we look at the lask comment in the track's timeline.
+            ## If it's more that 15' into the track, we assume the sound to be a set.
+            ## We will only search for tracks, not sets, on Beatport
 
-                ### need to convert time string to e.g. datetime or seconds to find max?
-                last_comment = max(comments_df[comments_df['TrackName']==track_name]
-                .apply(lambda x: sum(int(x) * 60 ** i for i, x in enumerate(reversed(ts.split(':'))))))
-                if last_comment < 900:
-                    
-                    ## search for track in beatport
+            ### need to convert time string to e.g. datetime or seconds to find max?
+            last_comment_time = max(comments_df[comments_df['TrackName']==track_name]
+            .apply(lambda x: sum(int(x) * 60 ** i for i, x in enumerate(reversed(ts.split(':'))))))
+            print(last_comment_time)
+            if last_comment_time < 900:
+                print('this is a track, need to search it on beatport')
+                ## search for track in beatport
 
-                # use new dict, append to df every time like for tracks
-                temp_track_df = pd.DataFrame(self.track_dict)
-                track_df = track_df.append(temp_track_df, ignore_index=True)
+            # use new dict, append to df every time like for tracks
+            temp_track_df = pd.DataFrame(self.track_dict)
+            track_df = track_df.append(temp_track_df, ignore_index=True)
 
                 
 
 
                 ### CONVERT COMMENT DICT TO DF, APPEND TO MAIN COMMENT DF
 
-            except:
-                print('No comments found')
+            #except:
+            #    print('No comments found')
 
             #going back to artist page - NEEDED?
             ## driver.execute_script("window.history.go(-1)")
