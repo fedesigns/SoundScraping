@@ -80,6 +80,8 @@ for i in range(artists_df['ArtistName'].count()):
 
 now = datetime.now()
 print(artists_df.head())
+print(comments_df)
+print(tracks_df)
 
 artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
 comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
@@ -100,4 +102,5 @@ tracks_df.to_csv('Tracks-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=Fa
 
 
 
+# %%
 # %%
