@@ -279,8 +279,7 @@ class SearchTracks():
 
             ## finding soundcloud tags
             try:
-                tags_els = self.scraper.driver.find_elements_by_class_name("sc-truncate sc-tagContent")
-                
+                tags_els = self.scraper.driver.find_elements_by_class_name("sc-truncate sc-tagContent") ### may have to use path not element?
                 tags = ", ".join([tags_els[n].text for n in range(len(tags_els))])
                 self.track_dict['Tags'] = tags
             except:
@@ -302,9 +301,9 @@ class SearchTracks():
             
             ## getting comments
             try: 
-                comment_items = self.scraper.driver.find_elements_by_class_name()
-                # may have to use e.g.:
-                # comment_items = '//ul/[@class="soundList__item"]/li'
+                # comment_items = self.scraper.driver.find_elements_by_class_name()
+                # may have to use e.g.: 
+                comment_items = '//ul/[@class="commentsList__item"]/li'  ### do we need to go one level up?
                 # self.scraper.driver.find_elements_by_xpath('//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/[@class="soundList__item"')
                 # could also use find_element_by_class_name()
                 print('got {} comments!'.format(len(track_items)))
@@ -314,7 +313,6 @@ class SearchTracks():
                     
                     ### GET CORRECT PATH
                     # define comment element here or go straight to sub elements below?        
-                    comment_element = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[{c+1}]/div/div/div[2]/div[1]/div/div/div[2]/a')
 
                     # creating a dictionary to store information about each particular comment
                     self.comment_dict = {
@@ -329,8 +327,8 @@ class SearchTracks():
 
                     ## finding comment text
                     try: 
-                        comment_el = self.scraper.
-                        comment = comment_el.text
+                        comment_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/div/span/p')
+                        comment = comment_el.text 
                         self.comment_dict['Comment'] = comment
                         print('Comment: ', comment)
                     except:
@@ -338,8 +336,8 @@ class SearchTracks():
 
                     ## finding comment date and time
                     try: 
-                        datetime_el = self.scraper.
-                        comment_datetime = datetime_el.text
+                        datetime_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[2]/span/time')
+                        comment_datetime = datetime_el.get_attribute("datetime")
                         self.comment_dict['Comment'] = comment_datetime
                         print('Posted on: ', comment_datetime)
                     except:
@@ -347,7 +345,7 @@ class SearchTracks():
 
                     ## finding the time of the track that the comment was posted at
                     try:
-                        track_time_el = self.scraper
+                        track_time_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/span/span/a')
                         track_time = track_time_el.text
                         self.comment_dict['TrackTime'] = track_time
                         print('At track time: ', track_time)
@@ -366,9 +364,10 @@ class SearchTracks():
                 ## We will only search for tracks, not sets, on Beatport
 
                 ### need to convert time string to e.g. datetime or seconds to find max?
-                last_comment = comments_df[comments_df['TrackName']==track_name].max(axis=0)
+                last_comment = max(comments_df[comments_df['TrackName']==track_name]
+                .apply(lambda x: sum(int(x) * 60 ** i for i, x in enumerate(reversed(ts.split(':'))))))
                 if last_comment < 900:
-
+                    
                     ## search for track in beatport
 
                 # use new dict, append to df every time like for tracks
