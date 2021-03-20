@@ -30,8 +30,8 @@ from datetime import datetime
 
 ## reading dataframes: artists from my Spotify, comments from soundcloud, track information
 artists_df = pd.read_csv('Artists.csv')
-comments_df = pd.read_csv('Comments.csv', index_col=False)
-tracks_df = pd.read_csv('Tracks.csv', index_col=False)
+comments_df = pd.read_csv('Comments.csv')#, index_col=False)
+tracks_df = pd.read_csv('Tracks.csv')#, index_col=False)
 
 print(artists_df.head())
 #print(comments_df.head())
@@ -53,27 +53,47 @@ for i in range(artists_df['ArtistName'].count()):
     ## getting artist information
     searcher.get_artist_info()
     keys = list(searcher.artist_info.keys())
-    print(keys)
+    # print(keys)
     ## adding scraped data to our Artist dataframe
     for k in range(len(keys)):
-        print(keys[k])
+        # print(keys[k])
         artists_df[keys[k]][i] = searcher.artist_info[keys[k]]
 
 
     ## getting track names and URLs
+    searcher.get_artist_tracks()
+    
+    #track_list = searcher.artist_tracks['TrackName']
+    #track_url_list = 
 
+    #for j in range(len(track_list)):
+    #    tracks_df['TrackName'][j] = track_list[j]
 
+    # creating a temporary df with this artist's tracks
+    temp_df = pd.DataFrame(searcher.artist_tracks)
+    ## appending temporary dataframe to the main tracks df
+    tracks_df = tracks_df.append(temp_df, ignore_index=True)
+
+    print(tracks_df)
     # searcher.scraper.driver.quit()
     # print(artists_df.head())
 
 now = datetime.now()
 print(artists_df.head())
+
 artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+tracks_df.to_csv('Tracks-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+
 
 #saving scraped data if error occurs
 #except:
- #   now = datetime.now()
-  #  artists_df.to_csv('Artists_{f}.csv'.format(now.strftime("%d/%m/%Y_%H:%M:%S")))
+#    now = datetime.now()
+#    artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+
+#    comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+#    tracks_df.to_csv('Tracks-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+
 
 ### create temporary dfs inside functions/loop and append those to main ones?
 ### handling NaN? nee to add them manually?
