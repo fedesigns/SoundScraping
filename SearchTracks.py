@@ -54,7 +54,13 @@ class SearchTracks():
             print('here at try')
 
         except:
+            ### need to fix issue here - check on ben klock
+            sleep(1)
             self.artist_items = self.scraper.driver.get(self.artist_url_no_space)
+            
+            if len(followers_strings_test[0]) < 4:
+                self.artist_items = self.scraper.driver.get(self.artist_url_no_space)
+            
             print(self.artist_url_no_space)
             print(self.artist_items)
             print('looking for tracks')
@@ -76,7 +82,15 @@ class SearchTracks():
         sleep(1)
         self.scraper.scroll(0, 100000)
         sleep(1)
-        print('here')
+        self.scraper.scroll(0, 100000)
+        sleep(1)
+        self.scraper.scroll(0, 100000)
+        sleep(1)
+        self.scraper.scroll(0, 100000)
+        sleep(1)
+        self.scraper.scroll(0, 100000)
+        sleep(1)
+        #print('here')
 
 
         ### ADD if/Else FOR THE TWO TYPES OF ARTIST NAME ENTRIES INTO URL STRING
@@ -161,14 +175,26 @@ class SearchTracks():
         # print(len(track_items))
 
        
-        for t in range(2):  #len(track_items)): ### FIX THIS LOOP. separate search for tracks and scraping of each track, or just go back to search page each time
+        for t in range(len(track_items)): ### FIX THIS LOOP. separate search for tracks and scraping of each track, or just go back to search page each time
             
             # sleep(1)
 
             ## if not the first iteration, go back to track page before opening next one
             if t > 0:
                 self.scraper.driver.execute_script("window.history.go(-1)")
-                sleep(6)
+                sleep(3)
+                self.scraper.scroll(0, 100000)
+                sleep(1)
+                self.scraper.scroll(0, 100000)
+                sleep(1)
+                self.scraper.scroll(0, 100000)
+                sleep(1)
+                self.scraper.scroll(0, 100000)
+                sleep(1)
+
+            if t >= 100:
+                break
+
 
             # print(f'track {t+1}')
             #title_element = track_items[i].find_element_by_class_name("soundTitle__title sc-link-dark")  ### index using get() instead? may have to find_element_by_xpath() and update li[] index within xpath at each loop iteration
@@ -331,6 +357,24 @@ class SearchTracks():
             sleep(1)
             self.scraper.scroll(0, 100000)
             sleep(1)
+            self.scraper.scroll(0, 100000)
+            sleep(1)
+            self.scraper.scroll(0, 100000)
+            sleep(1)
+            self.scraper.scroll(0, 100000)
+            sleep(1)
+            self.scraper.scroll(0, 100000)
+            sleep(1)
+            self.scraper.scroll(0, 100000)  ### reduce distance? will it give errors if too far?
+            sleep(1)
+            self.scraper.scroll(0, 100000)
+            sleep(1)
+            self.scraper.scroll(0, 100000)
+            sleep(1)
+            self.scraper.scroll(0, 100000)
+            sleep(1)
+            self.scraper.scroll(0, 100000)
+            sleep(1)
             
             ## getting comments
             #try: 
@@ -342,7 +386,7 @@ class SearchTracks():
             print('got {} comments!'.format(len(comment_items)))
             self.track_dict['CommentsCount'].append(len(comment_items))
     
-            for c in range(2):  #len(comment_items)):
+            for c in range(len(comment_items)):
                 
                 ### GET CORRECT PATH
                 # define comment element here or go straight to sub elements below?        
