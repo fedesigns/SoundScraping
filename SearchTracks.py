@@ -8,11 +8,12 @@ class SearchTracks():
     This class launches the search for all tracks of a given artist or label on SoundCloud.
     '''
     
-    def __init__(self, artist_input):
+    def __init__(self, tracks_df, comments_df):
         '''
         Initialises the class
         '''
-        self.artist_name = artist_input
+        self.tracks_df = tracks_df
+        self.comments_df = comments_df
         
         # Dictionaries storing the data we ultimately want to scrape
         self.artist_info = {'Bio': None, 'Location': None, 'Followers': None, 'ProfileImageURL': None, 'BackgroundImageURL': None} #'ArtistName': None,  declaring dictionary to store info
@@ -20,13 +21,13 @@ class SearchTracks():
 
         ### can all of these run inside init function or should they be a separate method?
         
-    def scrape_page(self):
+    def scrape_page(self, artist_input):
         '''
          launches a scraper that gets all items from the web page of a given artist
         '''  
+        self.artist_name = artist_input
         artist_words = self.artist_name.split()
 
-        ### need to extend this try/except to the whole script when automating - in loop using this class for different artists
         # trying the first of two possibilities for how artist names are entered in the URL: no spaces between words
         self.artist_string_no_space = "".join(artist_words)
         self.artist_string_dashes = "-".join(artist_words)
@@ -141,7 +142,7 @@ class SearchTracks():
         # need return?
         
 
-    def get_artist_tracks(self, tracks_df, comments_df):   
+    def get_artist_tracks(self):   
         '''
         This function extracts all items in the HTML tree that contain 'soundList' information, 
         then iterates through all elements in an artist's page that contain track titles and URLs, 
@@ -160,28 +161,28 @@ class SearchTracks():
         # print(len(track_items))
 
        
-        for t in range(len(track_items)): ### FIX THIS LOOP. separate search for tracks and scraping of each track, or just go back to search page each time
+        for t in range(2):  #len(track_items)): ### FIX THIS LOOP. separate search for tracks and scraping of each track, or just go back to search page each time
             
             # sleep(1)
 
             ## if not the first iteration, go back to track page before opening next one
             if t > 0:
                 self.scraper.driver.execute_script("window.history.go(-1)")
-                sleep(3)
+                sleep(6)
 
-            print(f'track {t+1}')
+            # print(f'track {t+1}')
             #title_element = track_items[i].find_element_by_class_name("soundTitle__title sc-link-dark")  ### index using get() instead? may have to find_element_by_xpath() and update li[] index within xpath at each loop iteration
             
             title_element = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[{t+1}]/div/div/div[2]/div[1]/div/div/div[2]/a')
 
             #//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[34]/div/div/div[2]/div[1]/div/div/div[2]/a
 
-            print(f'got title element {t+1}')
+            # print(f'got title element {t+1}')
             track_href = title_element.get_attribute('href')
             track_url = track_href # need to concatenate domain and href? eg "https://www.soundcloud.com" + 
             track_name = title_element.find_element_by_tag_name('span').text
         
-        ##for t in range(len(track_items)):
+            ##for t in range(len(track_items)):
 
             # storing the data in the track's dict
             ### REFORMAT TO REMOVE NONEs when beatport works
@@ -341,7 +342,7 @@ class SearchTracks():
             print('got {} comments!'.format(len(comment_items)))
             self.track_dict['CommentsCount'].append(len(comment_items))
     
-            for c in range(len(comment_items)):
+            for c in range(2):  #len(comment_items)):
                 
                 ### GET CORRECT PATH
                 # define comment element here or go straight to sub elements below?        
@@ -362,34 +363,41 @@ class SearchTracks():
                     comment_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/div/span/p')
                     comment = comment_el.text 
                     self.comment_dict['Comment'].append(comment)
-                    print('Comment: ', comment)
+                    #print('Comment: ', comment)
+
                 except:
                     print('No comment text found')
+                    self.comment_dict['Comment'].append(None)
+
 
                 ## finding comment date and time
                 try: 
                     datetime_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[2]/span/time')
                     comment_datetime = datetime_el.get_attribute("datetime")
                     self.comment_dict['CommentDateTime'].append(comment_datetime)
-                    print('Posted on: ', comment_datetime)
+                    #print('Posted on: ', comment_datetime)
                 except:
                     print('No comment text found')
+                    self.comment_dict['CommentDateTime'].append(None)
+
 
                 ## finding the time of the track that the comment was posted at
                 try:
                     track_time_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/span/span/a')
                     track_time = track_time_el.text
                     self.comment_dict['TrackTime'].append(track_time)
-                    print('At track time: ', track_time)
+                    #print('At track time: ', track_time)
                 except:
                     print('No tracktime found')
+                    self.comment_dict['TrackTime'].append(None)
+
                 
                 ### ERROR BELOW HERE? 
 
                 ## creating df from comments dict and appending it to original comments df
                 temp_comments_df = pd.DataFrame.from_dict(self.comment_dict)
-                comments_df = comments_df.append(temp_comments_df, ignore_index=True)
-
+                self.comments_df = self.comments_df.append(temp_comments_df, ignore_index=True)
+                print(self.comments_df)
 
             ## trying to infer whether the music is a set or a track by looking at its last comment.
             ## soundcloud hides the duration element somehow as part of the waveform graphic.
@@ -412,11 +420,12 @@ class SearchTracks():
                 print('this is a track, need to search it on beatport')
                 ## search for track in beatport
             '''
-            print(self.track_dict)
+            
             # use new dict, append to df every time like for tracks
             temp_track_df = pd.DataFrame(self.track_dict)
-            tracks_df = tracks_df.append(temp_track_df, ignore_index=True)
+            self.tracks_df = self.tracks_df.append(temp_track_df, ignore_index=True)
 
+            print(self.tracks_df)
                 
 
 
@@ -433,5 +442,5 @@ class SearchTracks():
             ### CONVERT TRACK_DICT TO DF AND APPEND TO MAIN DF
 
         # track_urls = scraper.driver.find_elements_by_xpath('//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[1]/div/div/div[2]/div[1]/div/div/div[2]/a')   # find element or elements?
-        return tracks_df, comments_df
+        return self.tracks_df, self.comments_df
 

@@ -42,13 +42,14 @@ print(artists_df.head())
 ## scraping the soundcloud page for each artist
 ### move driver calls here to avoid quitting and restarting each time?
 #try:
+searcher = SearchTracks.SearchTracks(tracks_df, comments_df)
+
 for i in range(artists_df['ArtistName'].count()):
 
     artist = artists_df.iloc[i, 0]
     print(artist)
 
-    searcher = SearchTracks.SearchTracks(artist)
-    searcher.scrape_page()
+    searcher.scrape_page(artist)
 
     ## getting artist information
     searcher.get_artist_info()
@@ -61,7 +62,7 @@ for i in range(artists_df['ArtistName'].count()):
 
 
     ## getting track names and URLs
-    searcher.get_artist_tracks(tracks_df, comments_df)
+    searcher.get_artist_tracks()
     
     #track_list = searcher.artist_tracks['TrackName']
     #track_url_list = 
@@ -70,31 +71,30 @@ for i in range(artists_df['ArtistName'].count()):
     #    tracks_df['TrackName'][j] = track_list[j]
 
     # creating a temporary df with this artist's tracks
-    temp_df = pd.DataFrame(searcher.artist_tracks)
+    #temp_df = pd.DataFrame(searcher.artist_tracks)
     ## appending temporary dataframe to the main tracks df
-    tracks_df = tracks_df.append(temp_df, ignore_index=True)
+    #tracks_df = tracks_df.append(temp_df, ignore_index=True)
 
     print(tracks_df)
     # searcher.scraper.driver.quit()
     # print(artists_df.head())
 
 now = datetime.now()
-print(artists_df.head())
-print(comments_df)
-print(tracks_df)
+print(artists_df)
+print(searcher.comments_df)
+print(searcher.tracks_df)
 
 artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-tracks_df.to_csv('Tracks-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+searcher.comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+searcher.tracks_df.to_csv('Tracks-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
 
 
 #saving scraped data if error occurs
 #except:
 #    now = datetime.now()
-#    artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-
-#    comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-#    tracks_df.to_csv('Tracks-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+ #   artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+  #  comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+   # tracks_df.to_csv('Tracks-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
 
 
 ### create temporary dfs inside functions/loop and append those to main ones?
