@@ -51,15 +51,22 @@ class TrackInfo():
             ## selecting search result
             self.result_name = self.scrape.driver.find_element_by_xpath(f'//*[@id="pjax-inner-wrapper"]/section/main/div/div[4]/ul/li[{r+1}]/div[2]/p[1]/a/span[1]').text
             self.result_artists = self.scrape.driver.find_element_by_xpath(f'//*[@id="pjax-inner-wrapper"]/section/main/div/div[4]/ul/li[{r+1}]/div[2]/p[2]/a[1]').text
+            result_artists_all = self.result_artists
             ## checking if there is a second artist
             try:
                 self.result_artist_2 = self.scrape.driver.find_element_by_xpath(f'//*[@id="pjax-inner-wrapper"]/section/main/div/div[4]/ul/li[{r+1}]/div[2]/p[2]/a[2]').text
-                self.result_artists = self.result_artists + ", " + self.result_artist_2
-                self.result_remixer = self.scrape.driver.find_element_by_xpath(f'//*[@id="pjax-inner-wrapper"]/section/main/div/div[4]/ul/li[{r+1}]/div[2]/p[3]/a').text
-                result_artists_all = self.result_artists + ", " + self.result_remixer
-
+                result_artists_all = self.result_artists + ", " + self.result_artist_2
             except:
                 print('only one artist')
+            
+            try:
+                self.result_remixer = self.scrape.driver.find_element_by_xpath(f'//*[@id="pjax-inner-wrapper"]/section/main/div/div[4]/ul/li[{r+1}]/div[2]/p[3]/a').text
+                result_artists_all = result_artists_all + ", " + self.result_remixer
+                
+            except:
+                print('No remixer')
+            
+
 
             ### Checking if the names of track and artist match our soundcloud data
             if self.artist_name.lower() in result_artists_all.lower() and (self.result_name.lower() in self.track_name.lower() or self.track_name.lower() in self.result_name.lower()):
