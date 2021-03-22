@@ -103,21 +103,21 @@ searcher.tracks_df.to_csv('Tracks-Full-{}.csv'.format(now.strftime("%d%m%Y-%H%M%
 # %%
 scraper = TrackInfo.TrackInfo(tracks_df)
 
-for i in range(3, tracks_df['TrackName'].count()):
+for i in range(tracks_df['TrackName'].count()):
     
-    #try: NEED TO REIMPLEMENT TRY
-    ## selecting track and artist to input to the scraper
-    track = tracks_df.iloc[i, 0]
-    artist = tracks_df.iloc[i, 2]
-    print(track, ' by ', artist)
+    try: NEED TO REIMPLEMENT TRY
+        ## selecting track and artist to input to the scraper
+        track = tracks_df.iloc[i, 0]
+        artist = tracks_df.iloc[i, 2]
+        print(track, ' by ', artist)
 
-    scraper.beatport_scraper(track, artist)
-    scraper.scrape.driver.quit()
+        scraper.beatport_scraper(track, artist)
+        scraper.scrape.driver.quit()
 
     ## if there is an error, save progress into csv in case
-    #except:
-    #    now = datetime.now()
-    #    scraper.tracks_df.to_csv('Tracks-and-Beats-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+    except:
+        now = datetime.now()
+        scraper.tracks_df.to_csv('Tracks-and-Beats-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
 
 now = datetime.now()
 print(scraper.tracks_df)

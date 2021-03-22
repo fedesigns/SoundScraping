@@ -45,7 +45,6 @@ class TrackInfo():
         except:
             print('Pop up did not show up')
 
-        
         ## iterating through search results
         for r in range(6):
             ## selecting search result
@@ -66,18 +65,12 @@ class TrackInfo():
             except:
                 print('No remixer')
             
-
-
             ### Checking if the names of track and artist match our soundcloud data
             if self.artist_name.lower() in result_artists_all.lower() and (self.result_name.lower() in self.track_name.lower() or self.track_name.lower() in self.result_name.lower()):
                 print('Track found!')
                 track_found = True
                 self.track_url = self.scrape.driver.find_element_by_xpath(f'//*[@id="pjax-inner-wrapper"]/section/main/div/div[4]/ul/li[{r+1}]/div[2]/p[1]/a').get_attribute('href')
                 break
-
-        #except:
-        #    track_found = False
-        #    print('Could not find track')
 
         if track_found == True:
             
