@@ -39,4 +39,5 @@ Building on this first iteration, I plan to:
 4. Conduct sentiment analysis on comments and extract audio features from mp3 track files
 5. Use ML predict sentiment and popularity from audio features
 6. Generate track images and sounds that can be tuned to desired sentiments
+7. Using ML to retreive sound from wave images?
 
