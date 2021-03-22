@@ -13,7 +13,6 @@ class TrackInfo():
         initialises the class, takes the tracks df as attribute
         '''
         self.tracks_df = tracks_df
-
         
     
     def beatport_scraper(self, track_input, artist_input):

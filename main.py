@@ -33,18 +33,11 @@ artists_df = pd.read_csv('Artists-Full.csv')
 comments_df = pd.read_csv('Comments-Full.csv')#, index_col=False)
 tracks_df = pd.read_csv('Tracks-Full.csv')#, index_col=False)
 
-#print(artists_df.head())
-#print(comments_df.head())
-print(tracks_df.head())
-## accessing files to store scraped data
 #%%
 
 ## scraping the soundcloud page for each artist
-### move driver calls here to avoid quitting and restarting each time?
-#try:
 searcher = SearchTracks.SearchTracks(tracks_df, comments_df)
 
-### run again with beatport, without artists who didn't work, with constant saving
 for i in range(artists_df['ArtistName'].count()):
     try:
         ### PROBLEM HERE THAT MAKES IT REPEAT READINGS? CHANGE ARTIST WRITING TO DF, EMBED IN FUNCTIONS
@@ -56,7 +49,7 @@ for i in range(artists_df['ArtistName'].count()):
         ## getting artist information
         searcher.get_artist_info()
         keys = list(searcher.artist_info.keys())
-        # print(keys)
+
         ## adding scraped data to our Artist dataframe
         for k in range(len(keys)):
             # print(keys[k])
@@ -66,20 +59,9 @@ for i in range(artists_df['ArtistName'].count()):
         ## getting track names and URLs
         searcher.get_artist_tracks()
         
-        #track_list = searcher.artist_tracks['TrackName']
-        #track_url_list = 
-
-        #for j in range(len(track_list)):
-        #    tracks_df['TrackName'][j] = track_list[j]
-
-        # creating a temporary df with this artist's tracks
-        #temp_df = pd.DataFrame(searcher.artist_tracks)
-        ## appending temporary dataframe to the main tracks df
-        #tracks_df = tracks_df.append(temp_df, ignore_index=True)
-
-        # print(tracks_df)
         searcher.scraper.driver.quit()
-        # print(artists_df.head())
+
+    #saving scraped data if error occurs
     except:
         now = datetime.now()
         artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
@@ -97,20 +79,20 @@ searcher.comments_df.to_csv('Comments-Full-{}.csv'.format(now.strftime("%d%m%Y-%
 searcher.tracks_df.to_csv('Tracks-Full-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
 
 
-#saving scraped data if error occurs
-
-
 # %%
+
+## Scraping Beatport
 scraper = TrackInfo.TrackInfo(tracks_df)
 
 for i in range(tracks_df['TrackName'].count()):
     
-    try: NEED TO REIMPLEMENT TRY
+    try: 
         ## selecting track and artist to input to the scraper
         track = tracks_df.iloc[i, 0]
         artist = tracks_df.iloc[i, 2]
         print(track, ' by ', artist)
 
+        ## scraping beatport
         scraper.beatport_scraper(track, artist)
         scraper.scrape.driver.quit()
 
