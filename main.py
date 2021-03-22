@@ -23,7 +23,7 @@ Further work will include:
 #%%
 import Scraper
 import SearchTracks
-# import TrackInfo
+import TrackInfo
 import pandas as pd
 from datetime import datetime
 
@@ -33,8 +33,8 @@ artists_df = pd.read_csv('Artists-Full.csv')
 comments_df = pd.read_csv('Comments-Full.csv')#, index_col=False)
 tracks_df = pd.read_csv('Tracks-Full.csv')#, index_col=False)
 
-print(artists_df.head())
-print(comments_df.head())
+#print(artists_df.head())
+#print(comments_df.head())
 print(tracks_df.head())
 ## accessing files to store scraped data
 #%%
@@ -100,10 +100,37 @@ searcher.tracks_df.to_csv('Tracks-Full-{}.csv'.format(now.strftime("%d%m%Y-%H%M%
 #saving scraped data if error occurs
 
 
-### create temporary dfs inside functions/loop and append those to main ones?
-### handling NaN? nee to add them manually?
+# %%
+scraper = TrackInfo.TrackInfo(tracks_df)
+
+for i in range(3, tracks_df['TrackName'].count()):
+    
+    #try: NEED TO REIMPLEMENT TRY
+    ## selecting track and artist to input to the scraper
+    track = tracks_df.iloc[i, 0]
+    artist = tracks_df.iloc[i, 2]
+    print(track, ' by ', artist)
+
+    scraper.beatport_scraper(track, artist)
+    scraper.scrape.driver.quit()
+
+    ## if there is an error, save progress into csv in case
+    #except:
+    #    now = datetime.now()
+    #    scraper.tracks_df.to_csv('Tracks-and-Beats-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+
+now = datetime.now()
+print(scraper.tracks_df)
+scraper.tracks_df.to_csv('Tracks-and-Beats-Full{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+
+
+        
+
+
+
 
 
 
 # %%
+ range(tracks_df['TrackName'].count())
 # %%
