@@ -36,6 +36,7 @@ class TrackInfo():
         self.result_items =  self.scrape.driver.get(search_url)
         sleep(10)
         track_found = False
+        
         #closing pop up
         try:
             pop_up_el = self.scrape.driver.find_element_by_class_name('bx-close-link')

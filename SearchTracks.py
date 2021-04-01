@@ -24,17 +24,20 @@ class SearchTracks():
          launches a scraper that gets all items from the web page of a given artist
         '''  
         self.artist_name = artist_input
-        artist_words = self.artist_name.split()
 
-        # trying the first of two possibilities for how artist names are entered in the URL: no spaces between words
-        self.artist_string_no_space = "".join(artist_words)
-        self.artist_string_dashes = "-".join(artist_words)
-        self.artist_url_no_space = f"https://www.soundcloud.com/{self.artist_string_no_space}/tracks" #need to handle exceptions as some artists have paths firstnamelastname and some have firstname-lastname
-        self.artist_url_dashes = f"https://www.soundcloud.com/{self.artist_string_dashes}/tracks"
- 
-        # getting all elements in the page, trying dashes format first
+        ## searching soundcloud profiles with the artist's name
+        # if the name contains multiple words, replace spaces with '%20'
+        self.artist_string = self.artist_name.replace(" ", "%20")
+        self.search_url = f"https://www.soundcloud.com/search/people?q={self.artist_string}"
+
+        ## getting the link to the page of the first result
         self.scraper = Scraper.Scraper()
-        self.artist_items = self.scraper.driver.get(self.artist_url_dashes)
+        self.artist_href = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div/div[3]/div/div/div/ul/li[1]/div/div/div/h2/a').get_attribute('href')
+        self.artist_url = f"https://www.soundcloud.com/{self.artist_href}/tracks" 
+
+ 
+        # getting all elements in the page
+        self.artist_items = self.scraper.driver.get(self.artist)
 
         try:
             ## checking if it's not an error page
@@ -52,8 +55,8 @@ class SearchTracks():
             print('here at try')
 
         except:
-            ### need to fix issue here - check on ben klock
             sleep(1)
+            '''
             self.artist_items = self.scraper.driver.get(self.artist_url_no_space)
             
             if len(followers_strings_test[0]) < 4:
@@ -61,8 +64,8 @@ class SearchTracks():
             
             print(self.artist_url_no_space)
             print(self.artist_items)
-            print('looking for tracks')
-            sleep(2)
+            '''
+            print("Didn't find original profile")
 
         sleep(1)  #leave time to load, then scroll down a few times to load all tracks
         self.scraper.scroll(0, 100000)  
