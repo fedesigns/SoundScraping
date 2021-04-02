@@ -1,6 +1,7 @@
 import Scraper
 import pandas as pd
 from time import sleep
+from CloudSaving import s3_save_image
 
 
 class SearchTracks():
@@ -98,12 +99,20 @@ class SearchTracks():
         sleep(1)
 
 
-    def get_artist_info(self):  
+    def get_artist_info(self, s3_client):  
         '''
         Extracts information about the artist and stores it in a dictionary
         '''
         # Dictionary storing artist data 
-        self.artist_info = {'Bio': None, 'Location': None, 'Followers': None, 'ProfileImageURL': None, 'BackgroundImageURL': None} #'ArtistName': None,  declaring dictionary to store info
+        self.artist_info = {
+                            'Bio': None, 
+                            'Location': None, 
+                            'Followers': None, 
+                            'ProfileImageURL': None, 
+                            'ProfileImagePath': None,
+                            'BackgroundImageURL': None,
+                            'BackgroundImagePath': None
+                            } #'ArtistName': None
 
         ## collecting artist bio
         try:
@@ -142,7 +151,11 @@ class SearchTracks():
             profile_image_strings = profile_image_string.split('"')
             profile_image_url = profile_image_strings[1]
             self.artist_info['ProfileImageURL'] = profile_image_url
-            print(profile_image_url, 'Profile Image URL')
+            # print(profile_image_url, 'Profile Image URL')
+
+            # saving image to cloud
+            profile_image_path = s3_save_image(profile_image_url, self.artist_name, track_name='', s3_client, 'sound-scraping', 'profile-images')
+            self.artist_info['ProfileImagePath'] = profile_image_path
         except:
             print('no profile image')
 
@@ -152,7 +165,12 @@ class SearchTracks():
             background_image_strings = background_image_string.split('")')
             background_image_url = background_image_strings[0].split('("')[1]
             self.artist_info['BackgroundImageURL'] = background_image_url
-            print(background_image_url, 'BackgroundImageURL')
+            # print(background_image_url, 'BackgroundImageURL')
+            
+            # saving to cloud
+            background_image_path = s3_save_image(background_image_url, self.artist_name, track_name='', s3_client, 'sound-scraping', 'background-images')
+            self.artist_info['BackgroundImagePath'] = background_image_path
+        
         except:
             print('no background image')
 
@@ -163,7 +181,7 @@ class SearchTracks():
             self.artists_df.loc[self.artists_df['ArtistName']==self.artist_name, cols[k]] = self.artist_info[cols[k]]
         
 
-    def get_artist_tracks(self):   
+    def get_artist_tracks(self, s3_client):   
         '''
         This function extracts all items in the HTML tree that contain 'soundList' information, 
         then iterates through all elements in an artist's page that contain track titles and URLs, 
@@ -215,6 +233,7 @@ class SearchTracks():
                                 'Shares': [],
                                 'Plays': [],
                                 'TrackImageURL': [],
+                                'TrackImagePath': [],
                                 'TrackDate': [],
                                 'Tags': [None],
                                 'BPM': [None],
@@ -301,7 +320,13 @@ class SearchTracks():
                 image_strings = image_string.split('")')
                 track_image_url = image_strings[0].split('("')[1]  ### will this work in one line?
                 self.track_dict['TrackImageURL'].append(track_image_url)
-                print(track_image_url)
+                # print(track_image_url)
+
+                # storing in cloud, saving path
+                track_image_path = s3_save_image(track_image_url, self.artist_name, self.track_name, s3_client, 'sound-scraping', 'track-images')
+                self.track_dict['TrackImagePath'].append(track_image_path)
+        
+
             except:
                 print('No image found')
                 self.track_dict['TrackImageURL'].append(None)
