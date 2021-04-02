@@ -29,18 +29,17 @@ from datetime import datetime
 
 
 ## reading dataframes: artists from my Spotify, comments from soundcloud, track information
-artists_df = pd.read_csv('Artists-Full.csv')
-comments_df = pd.read_csv('Comments-Full.csv')#, index_col=False)
-tracks_df = pd.read_csv('Tracks-Full.csv')#, index_col=False)
+artists_df = pd.read_csv('Artists-Test.csv')
+comments_df = pd.read_csv('Comments-Test.csv')#, index_col=False)
+tracks_df = pd.read_csv('Tracks-and-Beats-Test.csv')#, index_col=False)
 
 #%%
 
 ## scraping the soundcloud page for each artist
-searcher = SearchTracks.SearchTracks(tracks_df, comments_df)
+searcher = SearchTracks.SearchTracks(artists_df, tracks_df, comments_df)
 
-for i in range(artists_df['ArtistName'].count()):
+for i in range(15, 18):  # artists_df['ArtistName'].count()):
     try:
-        ### PROBLEM HERE THAT MAKES IT REPEAT READINGS? CHANGE ARTIST WRITING TO DF, EMBED IN FUNCTIONS
         artist = artists_df.iloc[i, 0]
         print(artist)
 
@@ -48,17 +47,9 @@ for i in range(artists_df['ArtistName'].count()):
 
         ## getting artist information
         searcher.get_artist_info()
-        keys = list(searcher.artist_info.keys())
-
-        ## adding scraped data to our Artist dataframe
-        for k in range(len(keys)):
-            # print(keys[k])
-            artists_df[keys[k]][i] = searcher.artist_info[keys[k]]
-
 
         ## getting track names and URLs
         searcher.get_artist_tracks()
-        
         searcher.scraper.driver.quit()
 
     #saving scraped data if error occurs
@@ -66,30 +57,29 @@ for i in range(artists_df['ArtistName'].count()):
         now = datetime.now()
         artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
         searcher.comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-        searcher.tracks_df.to_csv('Tracks-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-
-### NEED TO REMOVE DUPLICATES E.G. WILLOW, SUBLEE, RHADOO AFTER KiNK
+        searcher.tracks_df.to_csv('Tracks-and-Beats{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+    
 now = datetime.now()
-print(artists_df)
+print(searcher.artists_df)
 print(searcher.comments_df)
 print(searcher.tracks_df)
 
-artists_df.to_csv('Artists-Full-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+searcher.artists_df.to_csv('Artists-Full-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
 searcher.comments_df.to_csv('Comments-Full-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-searcher.tracks_df.to_csv('Tracks-Full-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+searcher.tracks_df.to_csv('Tracks-and-Beats-Full-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
 
 
 # %%
 
 ## Scraping Beatport
-scraper = TrackInfo.TrackInfo(tracks_df)
+scraper = TrackInfo.TrackInfo(searcher.tracks_df)
 
-for i in range(tracks_df['TrackName'].count()):
+for i in range(searcher.tracks_df['TrackName'].count()):
     
     try: 
         ## selecting track and artist to input to the scraper
-        track = tracks_df.iloc[i, 0]
-        artist = tracks_df.iloc[i, 2]
+        track = searcher.tracks_df.iloc[i, 0]
+        artist = searcher.tracks_df.iloc[i, 2]
         print(track, ' by ', artist)
 
         ## scraping beatport

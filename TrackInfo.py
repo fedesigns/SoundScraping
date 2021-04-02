@@ -71,6 +71,9 @@ class TrackInfo():
                 track_found = True
                 self.track_url = self.scrape.driver.find_element_by_xpath(f'//*[@id="pjax-inner-wrapper"]/section/main/div/div[4]/ul/li[{r+1}]/div[2]/p[1]/a').get_attribute('href')
                 break
+        
+        if track_found == False:
+            self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'IsTrack'] = False
 
         if track_found == True:
             
@@ -81,7 +84,7 @@ class TrackInfo():
                                 'Genre': None,
                                 'Waveform': None,
                                 'Length': None,
-                                'Type': None,
+                                'IsTrack': None,
                                 'Mix': None,
                                 'Feat': None,
                                 'Remixer': None,
@@ -100,7 +103,7 @@ class TrackInfo():
             ## getting information 
             try: 
                 bpm = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[3]/span[2]').text
-                self.beat_dict['BPM'] = bpm
+                self.beat_dict['BPM'] = int(bpm)
                 print('BPM: ', bpm)
             except:
                 print('No bpm')
@@ -127,13 +130,19 @@ class TrackInfo():
                 print('No Waveform')           
 
             try: 
-                length = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[1]/span[2]').text
+                length_text = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[1]/span[2]').text
+                length_strings = length_text.split(":")
+                if len(length_strings) == 2:
+                    length = int(length_strings[0]) * 60 + int(length_strings[1]) 
+                elif len(length_strings) == 3:
+                    length = int(length_strings[0]) * 3600 + int(length_strings[1]) * 60 + int(length_strings[2]) 
+            
                 self.beat_dict['Length'] = length
                 print('Length: ', length)
             except:
                 print('No Length')  
             
-            self.beat_dict['Type'] = "Track"
+            self.beat_dict['IsTrack'] = True
 
             try:
                 mix = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[1]/div[1]/h1[2]').text
@@ -173,6 +182,7 @@ class TrackInfo():
                 print('No release date found')  
 
             # inserting scraped data into Tracks df
+            '''
             self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'BPM'] = int(bpm)
             self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'Waveform'] = self.beat_dict['Waveform']
             self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'Key'] = self.beat_dict['Key']
@@ -187,5 +197,9 @@ class TrackInfo():
             self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'BeatportTrackName'] = self.beat_dict['BeatportTrackName']
             self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'Label'] = self.beat_dict['Label']
             self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'BeatportRelease'] = self.beat_dict['BeatportRelease']
-            
+            '''
+            cols = list(self.beat_dict.keys())
+            for k in range(len(cols)):
+                self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name, cols[k]] = self.beat_dict[cols[k]]
+                
             return self.tracks_df

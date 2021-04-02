@@ -8,15 +8,14 @@ class SearchTracks():
     This class launches the search for all tracks of a given artist or label on SoundCloud.
     '''
     
-    def __init__(self, tracks_df, comments_df):
+    def __init__(self, artists_df, tracks_df, comments_df):
         '''
         Initialises the class
         '''
         self.tracks_df = tracks_df
         self.comments_df = comments_df
+        self.artists_df = artists_df
         
-        # Dictionaries storing the data we ultimately want to scrape
-        self.artist_info = {'Bio': None, 'Location': None, 'Followers': None, 'ProfileImageURL': None, 'BackgroundImageURL': None} #'ArtistName': None,  declaring dictionary to store info
 
      
     def scrape_page(self, artist_input):
@@ -32,39 +31,50 @@ class SearchTracks():
 
         ## getting the link to the page of the first result
         self.scraper = Scraper.Scraper()
-        self.artist_href = scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div/div[3]/div/div/div/ul/li[1]/div/div/div/h2/a').get_attribute('href')
-        self.artist_url = f"https://www.soundcloud.com/{self.artist_href}/tracks" 
-
+        self.search_items = self.scraper.driver.get(self.search_url)
+        sleep(3)
+        self.artist_href = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div/div[3]/div/div/div/ul/li[1]/div/div/div/h2/a').get_attribute('href')
+        print(self.artist_href)
+        self.artist_url = f"{self.artist_href}/tracks" 
+        print(self.artist_url)
  
         # getting all elements in the page
-        self.artist_items = self.scraper.driver.get(self.artist)
+        self.artist_items = self.scraper.driver.get(self.artist_url)
 
         try:
             ## checking if it's not an error page
             sleep(1)
             self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h3')
             
-            ## checking if we didn't land on a fake profile
+            ## checking if we didn't land on a fake profile (with less than 1000 followers)
             followers_string_test = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[1]/a').get_attribute('title')
             print(followers_string_test[0])
             followers_strings_test = followers_string_test.split()
-             
-            if len(followers_strings_test[0]) < 4:
-                self.artist_items = self.scraper.driver.get(self.artist_url_no_space)
             
-            print('here at try')
+            # if profile has less than 1000 followers, try next result up to 4 times
+            if len(followers_strings_test[0]) < 4:
+                
+                for r in range(2,6):
+                    self.artist_href = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div/div[3]/div/div/div/ul/li[{r}]/div/div/div/h2/a').get_attribute('href')
+                    self.artist_url = f"{self.artist_href}/tracks" 
+                    self.artist_items = self.scraper.driver.get(self.artist_url)
+                    sleep(1)
+
+                    # checking if we didn't land on a fake profile (with less than 1000 followers)
+                    followers_string_test = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[1]/a').get_attribute('title')
+                    print(followers_string_test[0])
+                    followers_strings_test = followers_string_test.split()
+                    if len(followers_strings_test[0]) < 4:
+                        continue
+                    else:
+                        break
+                    
+                    # stopping search if we didn't find anyone with over 1000 followers
+                    return None
+            
+            print('Found profile')
 
         except:
-            sleep(1)
-            '''
-            self.artist_items = self.scraper.driver.get(self.artist_url_no_space)
-            
-            if len(followers_strings_test[0]) < 4:
-                self.artist_items = self.scraper.driver.get(self.artist_url_no_space)
-            
-            print(self.artist_url_no_space)
-            print(self.artist_items)
-            '''
             print("Didn't find original profile")
 
         sleep(1)  #leave time to load, then scroll down a few times to load all tracks
@@ -92,6 +102,8 @@ class SearchTracks():
         '''
         Extracts information about the artist and stores it in a dictionary
         '''
+        # Dictionary storing artist data 
+        self.artist_info = {'Bio': None, 'Location': None, 'Followers': None, 'ProfileImageURL': None, 'BackgroundImageURL': None} #'ArtistName': None,  declaring dictionary to store info
 
         ## collecting artist bio
         try:
@@ -138,11 +150,17 @@ class SearchTracks():
         try:
             background_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div').get_attribute('style')
             background_image_strings = background_image_string.split('")')
-            background_image_url = background_image_strings[0].split('("')[1]  ### will this work in one line?
+            background_image_url = background_image_strings[0].split('("')[1]
             self.artist_info['BackgroundImageURL'] = background_image_url
             print(background_image_url, 'BackgroundImageURL')
         except:
             print('no background image')
+
+
+        ## adding scraped data to our Artist dataframe 
+        cols = list(self.artist_info.keys())
+        for k in range(len(cols)):
+            self.artists_df.loc[self.artists_df['ArtistName']==self.artist_name, cols[k]] = self.artist_info[cols[k]]
         
 
     def get_artist_tracks(self):   
@@ -157,7 +175,7 @@ class SearchTracks():
         track_items = '//ul/[@class="soundList__item"]/li'
         print('got {} track items!'.format(len(track_items)))
        
-        for t in range(len(track_items)): ### FIX THIS LOOP. separate search for tracks and scraping of each track, or just go back to search page each time
+        for t in range(2): #len(track_items)): 
             
 
             ## if not the first iteration, go back to track page before opening next one
@@ -176,13 +194,15 @@ class SearchTracks():
             # stopping after 100 tracks of same artist
             if t >= 100:
                 break
-
-            title_element = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[{t+1}]/div/div/div[2]/div[1]/div/div/div[2]/a')
-
-            track_href = title_element.get_attribute('href')
-            track_url = track_href 
-            track_name = title_element.find_element_by_tag_name('span').text
-        
+            
+            try:
+                title_element = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[{t+1}]/div/div/div[2]/div[1]/div/div/div[2]/a')
+                track_href = title_element.get_attribute('href')    
+                track_url = track_href 
+                track_name = title_element.find_element_by_tag_name('span').text
+            
+            except:
+                continue
 
             # storing the data in the track's dict
             self.track_dict = {
@@ -202,7 +222,7 @@ class SearchTracks():
                                 'Genre': [None],
                                 'Waveform': [None],
                                 'Length': [None],
-                                'Type': [None],
+                                'IsTrack': [None],
                                 'Mix': [None],
                                 'Feat': [None],
                                 'Remixer': [None],
@@ -338,7 +358,7 @@ class SearchTracks():
             sleep(1)
             self.scraper.scroll(0, 100000)
             sleep(1)
-            self.scraper.scroll(0, 100000)  ### reduce distance? will it give errors if too far?
+            self.scraper.scroll(0, 100000)  
             sleep(1)
             self.scraper.scroll(0, 100000)
             sleep(1)
@@ -391,16 +411,24 @@ class SearchTracks():
                 ## finding the time of the track that the comment was posted at
                 try:
                     track_time_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/span/span/a')
-                    track_time = track_time_el.text
+                    track_time_text = track_time_el.text 
+
+                    # converting string to seconds integer
+                    track_time_strings = track_time_text.split(":")
+                    if len(track_time_strings) == 2:
+                        track_time = int(track_time_strings[0]) * 60 + int(track_time_strings[1]) 
+                    elif len(track_time_strings) == 3:
+                        track_time = int(track_time_strings[0]) * 3600 + int(track_time_strings[1]) * 60 + int(track_time_strings[2]) 
+
                     self.comment_dict['TrackTime'].append(track_time)
                     #print('At track time: ', track_time)
+
+
                 except:
                     print('No tracktime found')
                     self.comment_dict['TrackTime'].append(None)
 
                 
-                ### ERROR BELOW HERE? 
-
                 ## creating df from comments dict and appending it to original comments df
                 temp_comments_df = pd.DataFrame.from_dict(self.comment_dict)
                 self.comments_df = self.comments_df.append(temp_comments_df, ignore_index=True)
@@ -435,5 +463,5 @@ class SearchTracks():
 
             print(self.tracks_df)
             
-        return self.tracks_df, self.comments_df
+        return self.artists_df, self.tracks_df, self.comments_df
 
