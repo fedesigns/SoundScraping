@@ -191,8 +191,8 @@ class SearchTracks():
                 self.scraper.scroll(0, 100000)
                 sleep(1)
 
-            # stopping after 100 tracks of same artist
-            if t >= 100:
+            # stopping after 50 tracks of same artist
+            if t >= 50:
                 break
             
             try:

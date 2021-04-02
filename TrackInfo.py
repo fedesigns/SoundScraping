@@ -1,6 +1,7 @@
 import Scraper
 import pandas as pd
 from time import sleep
+from CloudSaving import s3_save_image
 
 class TrackInfo():
 
@@ -15,7 +16,7 @@ class TrackInfo():
         self.tracks_df = tracks_df
         
     
-    def beatport_scraper(self, track_input, artist_input):
+    def beatport_scraper(self, track_input, artist_input, s3_client):
         '''
         searches Beatport for a given track
         '''
@@ -82,7 +83,8 @@ class TrackInfo():
                                 'BPM': None,
                                 'Key': None,
                                 'Genre': None,
-                                'Waveform': None,
+                                'WaveformURL': None,
+                                'WaveformPath': None,
                                 'Length': None,
                                 'IsTrack': None,
                                 'Mix': None,
@@ -123,9 +125,12 @@ class TrackInfo():
                 print('No genre')   
 
             try: 
-                waveform = self.scrape.driver.find_element_by_xpath('//*[@id="react-track-waveform"]').get_attribute("data-src")
-                self.beat_dict['Waveform'] = waveform
-                print('Waveform: ', waveform)
+                waveform_url = self.scrape.driver.find_element_by_xpath('//*[@id="react-track-waveform"]').get_attribute("data-src")
+                self.beat_dict['WaveformURL'] = waveform_url
+                # print('Waveform: ', waveform)
+                waveform_path = s3_save_image(waveform_url, self.artist_name, self.track_name, s3_client, 'sound-scraping', 'waveforms')
+                self.beat_dict['WaveformPath'] = waveform_path
+                # need sleep?
             except:
                 print('No Waveform')           
 
