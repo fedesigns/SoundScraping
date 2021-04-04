@@ -22,7 +22,7 @@ class Scraper():
 
         #options.add_argument("--no-sandbox")	# without this, the chrome webdriver can't start (SECURITY RISK)
         #options.add_argument("--window-size=1920x1080")
-        self.driver = webdriver.Chrome()			# create webdriver. may have to add path?
+        self.driver = webdriver.Chrome()			
         self.verbose = verbose
     
     def scroll(self, x=0, y=10000):

@@ -20,44 +20,60 @@ Further work will include:
 3. conducting signal processing on audio files to extract additional features to analyse
 4. automating the selection of artists to expand the dataset by searching for record labels in souncloud or by using the Spotify API 
 '''
+
 #%%
+
 import Scraper
 import SearchTracks
 import TrackInfo
 import pandas as pd
 from datetime import datetime
-
+from Credentials import access_key_ID, secret_access_ID
+from boto3 import resource
+import os
+from CloudSaving import s3_save_image
 
 ## reading dataframes: artists from my Spotify, comments from soundcloud, track information
 artists_df = pd.read_csv('Artists-Test.csv')
 comments_df = pd.read_csv('Comments-Test.csv')#, index_col=False)
 tracks_df = pd.read_csv('Tracks-and-Beats-Test.csv')#, index_col=False)
+        
+## setting up AWS S3 client
+s3_client = resource("s3", aws_access_key_id=access_key_ID, aws_secret_access_key=secret_access_ID)
+s3_endpoint = 'eu-west-3'
+
+# starting ID counters
+trackID = 0
+commentID = 0
+artistID = 0
 
 #%%
 
 ## scraping the soundcloud page for each artist
 searcher = SearchTracks.SearchTracks(artists_df, tracks_df, comments_df)
 
-for i in range(15, 18):  # artists_df['ArtistName'].count()):
-    try:
-        artist = artists_df.iloc[i, 0]
-        print(artist)
+for i in range(17, 18):  # artists_df['ArtistName'].count()):
+    # try:
+    artist = artists_df.iloc[i, 1]
+    print(artist)
 
-        searcher.scrape_page(artist)
+    searcher.scrape_page(artist)
+    artistID += 1
 
-        ## getting artist information
-        searcher.get_artist_info()
+    ## getting artist information
+    searcher.get_artist_info(s3_client, artistID)
 
-        ## getting track names and URLs
-        searcher.get_artist_tracks()
-        searcher.scraper.driver.quit()
+    ## getting track names and URLs
+    
+    searcher.get_artist_tracks(s3_client, artistID, trackID, commentID)
+    searcher.scraper.driver.quit()
 
     #saving scraped data if error occurs
-    except:
-        now = datetime.now()
-        artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-        searcher.comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-        searcher.tracks_df.to_csv('Tracks-and-Beats{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+    # except:
+        # now = datetime.now()
+        # artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+        # searcher.comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+        # searcher.tracks_df.to_csv('Tracks-and-Beats-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
     
 now = datetime.now()
 print(searcher.artists_df)
@@ -74,17 +90,28 @@ searcher.tracks_df.to_csv('Tracks-and-Beats-Full-{}.csv'.format(now.strftime("%d
 ## Scraping Beatport
 scraper = TrackInfo.TrackInfo(searcher.tracks_df)
 
-for i in range(searcher.tracks_df['TrackName'].count()):
+for j in range(searcher.tracks_df['TrackName'].count()):
     
-    try: 
+     try: 
         ## selecting track and artist to input to the scraper
-        track = searcher.tracks_df.iloc[i, 0]
-        artist = searcher.tracks_df.iloc[i, 2]
+        track = searcher.tracks_df.iloc[j, 2]
+        artist = searcher.tracks_df.iloc[j, 4]
         print(track, ' by ', artist)
+        trackID = searcher.tracks_df.iloc[j, 0]
+        artistID = searcher.tracks_df.iloc[j, 1]
 
-        ## scraping beatport
-        scraper.beatport_scraper(track, artist)
-        scraper.scrape.driver.quit()
+        # checking if the track is not a DJ set by looking at whether its last comment was posted more than 15 minutes into the track
+        last_comment_time = int(max(searcher.comments_df[searcher.comments_df['TrackName']==track]['TrackTime']))
+        print('Last comment at:', last_comment_time)
+        if last_comment_time < 900:
+            print('This is a track, need to search it on beatport')
+
+            ## scraping beatport
+            scraper.beatport_scraper(trackID, artistID, track, artist, s3_client)
+            scraper.scrape.driver.quit()
+        
+        else:
+            continue
 
     ## if there is an error, save progress into csv in case
     except:
@@ -99,7 +126,8 @@ scraper.tracks_df.to_csv('Tracks-and-Beats-Full{}.csv'.format(now.strftime("%d%m
         
 
 
-
+# %%
+comments_df#[comments_df['TrackName']==track]['TrackTime']
 
 
 

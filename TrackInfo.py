@@ -16,7 +16,7 @@ class TrackInfo():
         self.tracks_df = tracks_df
         
     
-    def beatport_scraper(self, track_input, artist_input, s3_client):
+    def beatport_scraper(self, trackID, artistID, track_input, artist_input, s3_client):
         '''
         searches Beatport for a given track
         '''
@@ -128,7 +128,7 @@ class TrackInfo():
                 waveform_url = self.scrape.driver.find_element_by_xpath('//*[@id="react-track-waveform"]').get_attribute("data-src")
                 self.beat_dict['WaveformURL'] = waveform_url
                 # print('Waveform: ', waveform)
-                waveform_path = s3_save_image(waveform_url, self.artist_name, self.track_name, s3_client, 'sound-scraping', 'waveforms')
+                waveform_path = s3_save_image(waveform_url, artistID, trackID, self.artist_name, self.track_name, 'waveforms', s3_client, 'sound-scraping')
                 self.beat_dict['WaveformPath'] = waveform_path
                 # need sleep?
             except:
