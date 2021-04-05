@@ -119,15 +119,15 @@ class SearchTracks():
         ## collecting artist bio
         try:
             bio = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/div[1]/div/div/div/div/p').text
-            self.artist_info['bio'] = bio
-            print('bio', bio)
+            self.artist_info['bio'] = bio.replace("'", "''")
+            print('bio', bio.replace("'", "''"))
         except:
             print('No bio found')
 
         #collecting the information in the header and subheader. can contain location, artist name, 'pro unlimited'
         try:
-            subheader = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[2]').text
-            header = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[1]').text
+            subheader = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[2]').text.replace("'", "''")
+            header = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[1]').text.replace("'", "''")
             self.artist_info['location'] = header + ", " + subheader 
             print('Location', header + ", " + subheader)
         except:
@@ -185,10 +185,10 @@ class SearchTracks():
         
         ## adding scraped data to artists table in RDS by creating a new row
         values_artists = f"{self.artist_info['artist_id']}, '{self.artist_name}', '{self.artist_info['bio']}', '{self.artist_info['location']}', {self.artist_info['followers']}, '{self.artist_info['profile_image_url']}', '{self.artist_info['profile_image_path']}', '{self.artist_info['background_image_url']}', '{self.artist_info['background_image_path']}'"
-        print(values_artists)
-        columns = "artist_id, artist_name, bio, location, followers, profile_image_url, profile_image_path, background_image_url, background_image_path"            
+        # print(values_artists)
+        artists_columns = "artist_id, artist_name, bio, location, followers, profile_image_url, profile_image_path, background_image_url, background_image_path"            
 
-        insert_row('artists', columns, values_artists, hostname)
+        insert_row('artists', artists_columns, values_artists, hostname)
 
 
     def get_artist_tracks(self, s3_client, artistID, trackID, commentID, hostname):   
@@ -262,7 +262,7 @@ class SearchTracks():
                                 }
 
             # adding track name to temporary dict
-            self.track_dict['track_name'].append(track_name)  # add track ids?
+            self.track_dict['track_name'].append(track_name.replace("'", "''"))  # add track ids?
             print('TrackName: ', track_name)
             
             # adding track URL
@@ -277,8 +277,9 @@ class SearchTracks():
             try: 
                 description_element = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[2]/div/div/div/div[1]/div/p[1]')
                 track_description = description_element.text
-                self.track_dict['track_description'].append(track_description)
-                print('Track description: ', track_description)
+                track_des = track_description.replace("'", "''")
+                self.track_dict['track_description'].append(track_des)
+                print('Track description: ', track_des)
             except:
                 print('No track description')
                 self.track_dict['track_description'].append(None)
@@ -352,7 +353,7 @@ class SearchTracks():
             try:
                 release_date_el = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div[3]/div/time')
                 release_datetime = release_date_el.get_attribute('datetime')
-                self.track_dict['track_date_time'].append(release_datetime)
+                self.track_dict['track_date_time'].append(release_datetime.replace("'", "''"))
                 print(release_datetime)
             except:
                 print('No release date found')
@@ -436,7 +437,8 @@ class SearchTracks():
                 try: 
                     comment_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/div/span/p')
                     comment = comment_el.text 
-                    self.comment_dict['comment'].append(comment)
+                    comm = comment.replace("'", "''")
+                    self.comment_dict['comment'].append(comm)
                     #print('Comment: ', comment)
 
                 except:
@@ -469,17 +471,23 @@ class SearchTracks():
 
                     self.comment_dict['track_time'].append(track_time)
                     #print('At track time: ', track_time)
-
+                    
 
                 except:
                     print('No tracktime found')
                     self.comment_dict['track_time'].append(None)
 
-                
+                ## adding comment to RDS table
+                columns_comment = "track_id, artist_id, comment_id, comment, comment_date_time, track_time, track_name, track_url"
+                values_comment = f"{self.comment_dict['track_id'][0]}, {self.comment_dict['artist_id'][0]}, {self.comment_dict['comment_id'][0]}, '{self.comment_dict['comment'][0]}', '{self.comment_dict['comment_date_time'][0]}', {self.comment_dict['track_time'][0]}, '{self.comment_dict['track_name'][0]}', '{self.comment_dict['track_url'][0]}'"
+                insert_row('comments', columns_comment, values_comment, hostname)
+
                 ## creating df from comments dict and appending it to original comments df
                 temp_comments_df = pd.DataFrame.from_dict(self.comment_dict)
                 self.comments_df = self.comments_df.append(temp_comments_df, ignore_index=True)
                 # print(self.comments_df)
+
+                
 
             ## trying to infer whether the music is a set or a track by looking at its last comment.
             ## soundcloud hides the duration element somehow as part of the waveform graphic.
@@ -508,7 +516,16 @@ class SearchTracks():
             temp_track_df = pd.DataFrame(self.track_dict)
             self.tracks_df = self.tracks_df.append(temp_track_df, ignore_index=True)
 
+            ## Adding new row to RDS track
             # print(self.tracks_df)
+            values_tracks = f"{self.track_dict['track_id'][0]}, {self.track_dict['artist_id'][0]}, '{self.track_dict['track_name'][0]}', '{self.track_dict['track_url'][0]}', " + \
+                f"'{self.track_dict['artist_name'][0]}', '{self.track_dict['track_description'][0]}', {self.track_dict['likes'][0]}, {self.track_dict['comments_count'][0]}, " + \
+                f"{self.track_dict['shares'][0]}, {self.track_dict['plays'][0]}, '{self.track_dict['track_image_url'][0]}', '{self.track_dict['track_image_path'][0]}', " + \
+                f"'{self.track_dict['track_date_time'][0]}', '{self.track_dict['tags'][0]}'"
+            # print(values_artists)
+            track_columns = "track_id, artist_id, track_name, track_url, artist_name, track_description, likes, comments, shares, plays, track_image_url, track_image_path, track_date_time, tags"            
+
+            insert_row('tracks_and_beats', track_columns, values_tracks, hostname)
             
         return self.artists_df, self.tracks_df, self.comments_df, trackID, commentID, artistID
 

@@ -160,7 +160,7 @@ def insert_row(table, columns, values, hostname):
         # creating SQL string
         sql_str = sql.SQL(
             f"INSERT INTO {table}({columns}) VALUES({values}) ON CONFLICT DO NOTHING")
-        print(sql_str)
+        # print(sql_str)
         cursor.execute(sql_str)
         print('Number of parts: ', cursor.rowcount)
         cursor.close()
