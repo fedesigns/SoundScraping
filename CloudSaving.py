@@ -2,7 +2,7 @@ import os
 import requests
 from urllib.parse import urlparse
 from time import sleep
-from Credentials import db_endpoint, db_port, database, username, password, access_key_ID, secret_access_key
+from Credentials import db_endpoint, db_port, database, username, password, access_key_ID, secret_access_ID
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from psycopg2 import sql
@@ -75,7 +75,7 @@ def s3_save_image(image_url, artist_id, track_id, artist_name, track_name, folde
 def pd_from_table(table_name):
     '''
     Query data from pstgreSQL, return it as a pandas DataFrame
-    Builds on Hussein Rizkana's red_db_interact functions https://github.com/HusseinRizkana/ChessScraper/blob/main/rds_db_interact.py
+    Builds on Hussein Rizkana's rds_db_interact functions: https://github.com/HusseinRizkana/ChessScraper/blob/main/rds_db_interact.py
     '''
     conn = None
 
@@ -102,7 +102,7 @@ def pd_from_table(table_name):
     return df
 
 
-def create_table(sql, table_name):
+def create_table(sql, hostname, table_name):
     '''
     Create postgreSQL table. 
     If it exists, return a description of columns
@@ -137,7 +137,7 @@ def create_table(sql, table_name):
 
     cursor.close()
 
-def insert_row(table, columns, values):
+def insert_row(table, columns, values, hostname):
     '''
     insert data into table (only accepts single insert)
     table, columns and values as strings
@@ -160,7 +160,7 @@ def insert_row(table, columns, values):
         # creating SQL string
         sql_str = sql.SQL(
             f"INSERT INTO {table}({columns}) VALUES({values}) ON CONFLICT DO NOTHING")
-        
+        print(sql_str)
         cursor.execute(sql_str)
         print('Number of parts: ', cursor.rowcount)
         cursor.close()
@@ -172,11 +172,46 @@ def insert_row(table, columns, values):
         if conn is not None:
             conn.close
 
+def update_row(table, row, column, value, ref_column, ref_value, hostname):
+    '''
+    updates the value of a single cell
+    table, columns and values as strings
+    '''
 
-def insert_multiple_rows(table, columns, values):
+    conn = None
+
+    try:
+        conn = psycopg2.connect(host=hostname,
+                                dbname=database,
+                                user=username,
+                                password=password)
+
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = conn.cursor()
+
+        # Select current version of DB
+        cursor.execute('SELECT version()')
+
+        # creating SQL string
+        sql_str = sql.SQL(
+            f"UPDATE {table} SET {column} = {value} WHERE {ref_column} = {ref_value}")
+        
+        cursor.execute(sql_str)
+        print('Number of updates: ', cursor.rowcount)
+        cursor.close()
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    
+    finally:
+        if conn is not None:
+            conn.close
+
+
+def insert_multiple_rows(table, columns, values, hostname):
     '''
     Inserting multiple rows at once to PostgreSQL table
-    Table as string, columns as string, values as string list of tuples for multiple inserts
+    Table as string, columns as string, values as string - list of tuples for multiple inserts
     '''
     conn = None
     
@@ -205,7 +240,7 @@ def insert_multiple_rows(table, columns, values):
             conn.close()
 
 
-def clear_table(table):
+def clear_table(table, hostname):
     ''' 
     clear chosen table - use with caution
     '''
@@ -241,7 +276,7 @@ def clear_table(table):
         if conn is not None:
             conn.close()
 
-def get_count(table):
+def get_count(table, hostname):
     conn = None
     try:
         conn = psycopg2.connect(host=hostname,
@@ -274,62 +309,62 @@ class TableSQL:
         
         ## Creating tables through SQL strings
         self.create_artists = ''' CREATE TABLE if not exists artists(
-            ArtistID int, 
-            ArtistName varchar(90), 
-            Bio varchar(8000), 
+            Artist_ID int, 
+            Artist_Name varchar(90), 
+            Bio varchar(9000), 
             Location varchar(90), 
             Followers int, 
-            ProfileImageURL varchar(90), 
-            ProfileImagePath varchar(90), 
-            BackgroundImageURL varchar(90),	
-            BackgroundImagePath varchar(90),
-            PRIMARY KEY(ArtistID)
+            Profile_Image_URL varchar(300), 
+            Profile_Image_Path varchar(300), 
+            Background_Image_URL varchar(300),	
+            Background_Image_Path varchar(300),
+            PRIMARY KEY(Artist_ID)
         )'''
 
         self.create_tracks_and_beats = ''' CREATE TABLE if not exists tracks_and_beats(
-            TrackID int, 
-            ArtistID int,
-            TrackName varchar(90),
-            TrackURL varchar(90),
-            ArtistName varchar(90),
-            TrackDescription varchar(8000),
+            Track_ID int, 
+            Artist_ID int,
+            Track_Name varchar(90),
+            Track_URL varchar(300),
+            Artist_Name varchar(90),
+            Track_Description varchar(900),
             Likes int,
             Comments int,
             Shares int,
             Plays int,
-            TrackImageURL varchar(90),
-            TrackImagePath varchar(90),
-            TrackDate varchar(90),
+            Track_Image_URL varchar(300),
+            Track_Image_Path varchar(300),
+            Track_Date_Time varchar(60),
             Tags varchar(90),
             BPM int,
             Key varchar(60),
             Genre varchar(90),
-            WaveformURL varchar(90),
-            WaveformPath varchar(90),
+            Waveform_URL varchar(300),
+            Waveform_Path varchar(300),
             Length int,
-            isTrack boolean,
-            Mix varchar(90),
-            Feat varchar(90),
-            Remixer varchar(90),
-            OriginalProducer varchar(90),
-            TrackDate varchar(90),
-            BeatportURL varchar(90),
-            BeatportTrackName varchar(90),
-            Label varchar(90),
-            BeatportRelease varchar(90),
-            PRIMARY KEY(TrackID)
+            is_Track boolean,
+            Mix varchar(60),
+            Feat varchar(60),
+            Remixer varchar(60),
+            Original_Producer varchar(60),
+            Track_Date varchar(60),
+            Beatport_URL varchar(300),
+            Beatport_Track_Name varchar(90),
+            Label varchar(60),
+            Beatport_Release varchar(60),
+            PRIMARY KEY(Track_ID)
         )'''
         
         self.create_comments = ''' CREATE TABLE if not exists comments(
-            TrackID int,
-            ArtistID int,
-            CommentID int,
-            Comment varchar(8000),
-            CommentDateTime varchar(90),
-            TrackTime int,
-            TrackName varchar(90),
-            TrackURL varchar(90),
-            PRIMARY KEY(CommentID)
+            Track_ID int,
+            Artist_ID int,
+            Comment_ID int,
+            Comment varchar(600),
+            Comment_Date_Time varchar(90),
+            Track_Time int,
+            Track_Name varchar(90),
+            Track_URL varchar(300),
+            PRIMARY KEY(Comment_ID)
         )'''
 
     def connect(self):

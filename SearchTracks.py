@@ -1,7 +1,7 @@
 import Scraper
 import pandas as pd
 from time import sleep
-from CloudSaving import s3_save_image
+from CloudSaving import s3_save_image, insert_row, insert_multiple_rows, update_row
 
 
 class SearchTracks():
@@ -99,27 +99,28 @@ class SearchTracks():
         sleep(1)
 
 
-    def get_artist_info(self, s3_client, artistID):  
+    def get_artist_info(self, s3_client, artistID, hostname):  
         '''
         Extracts information about the artist and stores it in a dictionary
         '''
         # Dictionary storing artist data 
         self.artist_info = {
-                            'ArtistID': artistID,
-                            'Bio': None, 
-                            'Location': None, 
-                            'Followers': None, 
-                            'ProfileImageURL': None, 
-                            'ProfileImagePath': None,
-                            'BackgroundImageURL': None,
-                            'BackgroundImagePath': None
+                            'artist_id': artistID,
+                            'bio': None, 
+                            'location': None, 
+                            'followers': None, 
+                            'profile_image_url': None, 
+                            'profile_image_path': None,
+                            'background_image_url': None,
+                            'background_image_path': None
                             } #'ArtistName': None
+
 
         ## collecting artist bio
         try:
             bio = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/div[1]/div/div/div/div/p').text
-            self.artist_info['Bio'] = bio
-            print('Bio', bio)
+            self.artist_info['bio'] = bio
+            print('bio', bio)
         except:
             print('No bio found')
 
@@ -127,7 +128,7 @@ class SearchTracks():
         try:
             subheader = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[2]').text
             header = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[2]/h4[1]').text
-            self.artist_info['Location'] = header + ", " + subheader 
+            self.artist_info['location'] = header + ", " + subheader 
             print('Location', header + ", " + subheader)
         except:
             print("no location found")
@@ -143,7 +144,7 @@ class SearchTracks():
             followers = int(followers)
         else: 
             followers = int(followers_strings[0])
-        self.artist_info['Followers'] = int(followers)
+        self.artist_info['followers'] = int(followers)
         print(followers, 'Followers')
 
         # getting a string containing image metadata, splitting it at '"', to save the url in the dict
@@ -151,12 +152,12 @@ class SearchTracks():
         profile_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[1]/div/span').get_attribute('style')
         profile_image_strings = profile_image_string.split('"')
         profile_image_url = profile_image_strings[1]
-        self.artist_info['ProfileImageURL'] = profile_image_url
+        self.artist_info['profile_image_url'] = profile_image_url
         # print(profile_image_url, 'Profile Image URL')
 
         # saving image to cloud
         profile_image_path = s3_save_image(profile_image_url, artistID, '', self.artist_name, '', 'profile-images', s3_client, 'sound-scraping')
-        self.artist_info['ProfileImagePath'] = profile_image_path
+        self.artist_info['profile_image_path'] = profile_image_path
         print('Profile img path:', profile_image_path)
         # except:
         #     print('no profile image')
@@ -166,12 +167,12 @@ class SearchTracks():
         background_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div').get_attribute('style')
         background_image_strings = background_image_string.split('")')
         background_image_url = background_image_strings[0].split('("')[1]
-        self.artist_info['BackgroundImageURL'] = background_image_url
+        self.artist_info['background_image_url'] = background_image_url
         # print(background_image_url, 'BackgroundImageURL')
         
         # saving to cloud
         background_image_path = s3_save_image(background_image_url, artistID, '', self.artist_name, '', 'background-images', s3_client, 'sound-scraping')
-        self.artist_info['BackgroundImagePath'] = background_image_path
+        self.artist_info['background_image_path'] = background_image_path
         print('Backg img path:', background_image_path)
         # except:
         #     print('no background image')
@@ -180,10 +181,17 @@ class SearchTracks():
         ## adding scraped data to our Artist dataframe 
         cols = list(self.artist_info.keys())
         for k in range(len(cols)):
-            self.artists_df.loc[self.artists_df['ArtistName']==self.artist_name, cols[k]] = self.artist_info[cols[k]]
+            self.artists_df.loc[self.artists_df['artist_name']==self.artist_name, cols[k]] = self.artist_info[cols[k]]
         
+        ## adding scraped data to artists table in RDS by creating a new row
+        values_artists = f"{self.artist_info['artist_id']}, '{self.artist_name}', '{self.artist_info['bio']}', '{self.artist_info['location']}', {self.artist_info['followers']}, '{self.artist_info['profile_image_url']}', '{self.artist_info['profile_image_path']}', '{self.artist_info['background_image_url']}', '{self.artist_info['background_image_path']}'"
+        print(values_artists)
+        columns = "artist_id, artist_name, bio, location, followers, profile_image_url, profile_image_path, background_image_url, background_image_path"            
 
-    def get_artist_tracks(self, s3_client, artistID, trackID, commentID):   
+        insert_row('artists', columns, values_artists, hostname)
+
+
+    def get_artist_tracks(self, s3_client, artistID, trackID, commentID, hostname):   
         '''
         This function extracts all items in the HTML tree that contain 'soundList' information, 
         then iterates through all elements in an artist's page that contain track titles and URLs, 
@@ -227,38 +235,38 @@ class SearchTracks():
 
             # storing the data in the track's dict
             self.track_dict = {
-                                'TrackID': [trackID],
-                                'ArtistID': [artistID],
-                                'TrackName': [], 
-                                'TrackURL': [], 
-                                'ArtistName': [self.artist_name],
-                                'TrackDescription': [],
-                                'Likes': [],
-                                'CommentsCount': [],
-                                'Shares': [],
-                                'Plays': [],
-                                'TrackImageURL': [],
-                                'TrackImagePath': [],
-                                'TrackDate': [],
-                                'Tags': [None],
-                                'BPM': [None],
-                                'Key': [None],
-                                'Genre': [None],
-                                'Waveform': [None],
-                                'Length': [None],
-                                'IsTrack': [None],
-                                'Mix': [None],
-                                'Feat': [None],
-                                'Remixer': [None],
-                                'OriginalProducer': [None]
+                                'track_id': [trackID],
+                                'artist_id': [artistID],
+                                'track_name': [], 
+                                'track_url': [], 
+                                'artist_name': [self.artist_name],
+                                'track_description': [],
+                                'likes': [],
+                                'comments_count': [],
+                                'shares': [],
+                                'plays': [],
+                                'track_image_url': [],
+                                'track_image_path': [],
+                                'track_date_time': [],
+                                'tags': [None],
+                                'bpm': [None],
+                                'key': [None],
+                                'genre': [None],
+                                'waveform': [None],
+                                'length': [None],
+                                'is_track': [None],
+                                'mix': [None],
+                                'feat': [None],
+                                'remixer': [None],
+                                'original_producer': [None]
                                 }
 
             # adding track name to temporary dict
-            self.track_dict['TrackName'].append(track_name)  # add track ids?
+            self.track_dict['track_name'].append(track_name)  # add track ids?
             print('TrackName: ', track_name)
             
             # adding track URL
-            self.track_dict['TrackURL'].append(track_url)
+            self.track_dict['track_url'].append(track_url)
             print('TrackURL: ', track_url)
 
             ## opening track page
@@ -269,11 +277,11 @@ class SearchTracks():
             try: 
                 description_element = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[2]/div/div/div/div[1]/div/p[1]')
                 track_description = description_element.text
-                self.track_dict['TrackDescription'].append(track_description)
+                self.track_dict['track_description'].append(track_description)
                 print('Track description: ', track_description)
             except:
                 print('No track description')
-                self.track_dict['TrackDescription'].append(None)
+                self.track_dict['track_description'].append(None)
 
 
             ## finding likes. 
@@ -283,11 +291,11 @@ class SearchTracks():
                 likes_strings = likes_string.split()
                 likes_digits = likes_strings[0].split(',')
                 likes = "".join(likes_digits)
-                self.track_dict['Likes'].append(int(likes))
+                self.track_dict['likes'].append(int(likes))
                 print('Track likes: ', likes)
             except:
                 print('No likes found')
-                self.track_dict['Likes'].append(None)
+                self.track_dict['likes'].append(None)
                
 
             ## finding shares. 
@@ -297,11 +305,11 @@ class SearchTracks():
                 shares_strings = shares_string.split()
                 shares_digits = shares_strings[0].split(',')
                 shares = "".join(shares_digits)
-                self.track_dict['Shares'].append(int(shares))
-                print('Shares: ', shares)
+                self.track_dict['shares'].append(int(shares))
+                print('shares: ', shares)
             except:
                 print('No shares found')
-                self.track_dict['Shares'].append(None)
+                self.track_dict['shares'].append(None)
 
 
             ## finding plays. 
@@ -311,11 +319,11 @@ class SearchTracks():
                 plays_strings = plays_string.split()
                 plays_digits = plays_strings[0].split(',')
                 plays = "".join(plays_digits)                
-                self.track_dict['Plays'].append(int(plays))
+                self.track_dict['plays'].append(int(plays))
                 print('Plays: ', plays)
             except:
                 print('No plays found')
-                self.track_dict['Plays'].append(None)
+                self.track_dict['plays'].append(None)
 
 
             ## finding the URL of the track's image. 
@@ -324,17 +332,17 @@ class SearchTracks():
                 image_string = image_el.get_attribute('style')
                 image_strings = image_string.split('")')
                 track_image_url = image_strings[0].split('("')[1]  ### will this work in one line?
-                self.track_dict['TrackImageURL'].append(track_image_url)
+                self.track_dict['track_image_url'].append(track_image_url)
                 # print(track_image_url)
 
             except:
                 print('No image found')
-                self.track_dict['TrackImageURL'].append(None)
+                self.track_dict['track_image_url'].append(None)
 
         # try:   
             # storing in cloud, saving path
             track_image_path = s3_save_image(track_image_url, artistID, trackID, self.artist_name, track_name, 'track-images', s3_client, 'sound-scraping')
-            self.track_dict['TrackImagePath'].append(track_image_path)
+            self.track_dict['track_image_path'].append(track_image_path)
         # except:
             # print('could not store image')
             # self.track_dict['TrackImagePath'].append(None)
@@ -344,11 +352,11 @@ class SearchTracks():
             try:
                 release_date_el = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div[3]/div/time')
                 release_datetime = release_date_el.get_attribute('datetime')
-                self.track_dict['TrackDate'].append(release_datetime)
+                self.track_dict['track_date_time'].append(release_datetime)
                 print(release_datetime)
             except:
                 print('No release date found')
-                self.track_dict['TrackDate'].append(None)
+                self.track_dict['track_date_time'].append(None)
 
             ## finding soundcloud tags. #### NOT WORKING YET
             '''
@@ -406,7 +414,7 @@ class SearchTracks():
             ## getting comments
             comment_items = self.scraper.driver.find_elements_by_class_name("commentsList__item")
             print('got {} comments!'.format(len(comment_items)))
-            self.track_dict['CommentsCount'].append(len(comment_items))
+            self.track_dict['comments_count'].append(len(comment_items))
     
             for c in range(len(comment_items)):
                 
@@ -414,37 +422,37 @@ class SearchTracks():
 
                 # creating a dictionary to store information about each particular comment
                 self.comment_dict = {
-                                'TrackID': [trackID],
-                                'ArtistID': [artistID],
-                                'CommentID': [commentID],
-                                'Comment': [], 
-                                'CommentDateTime': [], 
-                                'TrackTime': [],
-                                'TrackName': [track_name],
-                                'TrackURL': [track_url]
+                                'track_id': [trackID],
+                                'artist_id': [artistID],
+                                'comment_id': [commentID],
+                                'comment': [], 
+                                'comment_date_time': [], 
+                                'track_time': [],
+                                'track_name': [track_name],
+                                'track_url': [track_url]
                                 }
 
                 ## finding comment text
                 try: 
                     comment_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[1]/div/span/p')
                     comment = comment_el.text 
-                    self.comment_dict['Comment'].append(comment)
+                    self.comment_dict['comment'].append(comment)
                     #print('Comment: ', comment)
 
                 except:
                     print('No comment text found')
-                    self.comment_dict['Comment'].append(None)
+                    self.comment_dict['comment'].append(None)
 
 
                 ## finding comment date and time
                 try: 
                     datetime_el = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[3]/div[1]/div/div[2]/div[2]/div/div[3]/ul/li[{c+1}]/div/div/div[2]/span/time')
                     comment_datetime = datetime_el.get_attribute("datetime")
-                    self.comment_dict['CommentDateTime'].append(comment_datetime)
+                    self.comment_dict['comment_date_time'].append(comment_datetime)
                     #print('Posted on: ', comment_datetime)
                 except:
                     print('No comment text found')
-                    self.comment_dict['CommentDateTime'].append(None)
+                    self.comment_dict['comment_date_time'].append(None)
 
 
                 ## finding the time of the track that the comment was posted at
@@ -459,13 +467,13 @@ class SearchTracks():
                     elif len(track_time_strings) == 3:
                         track_time = int(track_time_strings[0]) * 3600 + int(track_time_strings[1]) * 60 + int(track_time_strings[2]) 
 
-                    self.comment_dict['TrackTime'].append(track_time)
+                    self.comment_dict['track_time'].append(track_time)
                     #print('At track time: ', track_time)
 
 
                 except:
                     print('No tracktime found')
-                    self.comment_dict['TrackTime'].append(None)
+                    self.comment_dict['track_time'].append(None)
 
                 
                 ## creating df from comments dict and appending it to original comments df

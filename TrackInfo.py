@@ -16,7 +16,7 @@ class TrackInfo():
         self.tracks_df = tracks_df
         
     
-    def beatport_scraper(self, trackID, artistID, track_input, artist_input, s3_client):
+    def beatport_scraper(self, trackID, artistID, track_input, artist_input, s3_client, hostname):
         '''
         searches Beatport for a given track
         '''
@@ -80,21 +80,21 @@ class TrackInfo():
             
             # creating dict to store scraped data
             self.beat_dict = {
-                                'BPM': None,
-                                'Key': None,
-                                'Genre': None,
-                                'WaveformURL': None,
-                                'WaveformPath': None,
-                                'Length': None,
-                                'IsTrack': None,
-                                'Mix': None,
-                                'Feat': None,
-                                'Remixer': None,
-                                'OriginalProducer': None,
-                                'BeatportURL': self.track_url,
-                                'BeatportTrackName': self.result_name,
-                                'Label': None,
-                                'BeatportRelease': None
+                                'bpm': None,
+                                'key': None,
+                                'genre': None,
+                                'waveform_url': None,
+                                'waveform_path': None,
+                                'length': None,
+                                'is_track': None,
+                                'mix': None,
+                                'feat': None,
+                                'remixer': None,
+                                'original_producer': None,
+                                'beatport_url': self.track_url,
+                                'beatport_track_name': self.result_name,
+                                'label': None,
+                                'beatport_release': None
                                 }
 
             ## opening track page
@@ -105,32 +105,31 @@ class TrackInfo():
             ## getting information 
             try: 
                 bpm = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[3]/span[2]').text
-                self.beat_dict['BPM'] = int(bpm)
+                self.beat_dict['bpm'] = int(bpm)
                 print('BPM: ', bpm)
             except:
                 print('No bpm')
 
             try: 
                 key = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[4]/span[2]').text
-                self.beat_dict['Key'] = key
+                self.beat_dict['key'] = key
                 print('Key: ', key)
             except:
                 print('No key')
 
             try: 
                 genre = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[5]/span[2]/a').text
-                self.beat_dict['Genre'] = genre
+                self.beat_dict['genre'] = genre
                 print('Genre: ', genre)
             except:
                 print('No genre')   
 
             try: 
                 waveform_url = self.scrape.driver.find_element_by_xpath('//*[@id="react-track-waveform"]').get_attribute("data-src")
-                self.beat_dict['WaveformURL'] = waveform_url
+                self.beat_dict['waveform_url'] = waveform_url
                 # print('Waveform: ', waveform)
                 waveform_path = s3_save_image(waveform_url, artistID, trackID, self.artist_name, self.track_name, 'waveforms', s3_client, 'sound-scraping')
-                self.beat_dict['WaveformPath'] = waveform_path
-                # need sleep?
+                self.beat_dict['waveform_path'] = waveform_path
             except:
                 print('No Waveform')           
 
@@ -142,7 +141,7 @@ class TrackInfo():
                 elif len(length_strings) == 3:
                     length = int(length_strings[0]) * 3600 + int(length_strings[1]) * 60 + int(length_strings[2]) 
             
-                self.beat_dict['Length'] = length
+                self.beat_dict['length'] = length
                 print('Length: ', length)
             except:
                 print('No Length')  
@@ -151,37 +150,37 @@ class TrackInfo():
 
             try:
                 mix = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[1]/div[1]/h1[2]').text
-                self.beat_dict['Mix'] = mix
+                self.beat_dict['mix'] = mix
                 print('Mix: ', mix)
             except:
                 print('No mix information')
             
             try:
-                self.beat_dict['Feat'] = self.result_artist_2
+                self.beat_dict['feat'] = self.result_artist_2
             except:
                 print('No feat')
 
             try:
-                self.beat_dict['Remixer'] = self.result_remixer
+                self.beat_dict['remixer'] = self.result_remixer
             except:
                 print('No remixer')
 
             try:
-                self.beat_dict['OriginalProducer'] = self.result_artists
+                self.beat_dict['original_producer'] = self.result_artists
         
             except:
                 print('Did not find artists')
 
             try:
                 label = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[6]/span[2]/a').text
-                self.beat_dict['Label'] = label
+                self.beat_dict['label'] = label
                 print('Label: ', label)
             except:
                 print('No label found')
 
             try:
                 release = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[2]/span[2]').text
-                self.beat_dict['BeatportRelease'] = release
+                self.beat_dict['beatport_release'] = release
                 print('Released on ', release)
             except:
                 print('No release date found')  
@@ -205,6 +204,6 @@ class TrackInfo():
             '''
             cols = list(self.beat_dict.keys())
             for k in range(len(cols)):
-                self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name, cols[k]] = self.beat_dict[cols[k]]
+                self.tracks_df.loc[self.tracks_df['track_name']==self.track_name, cols[k]] = self.beat_dict[cols[k]]
                 
             return self.tracks_df
