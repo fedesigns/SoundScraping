@@ -40,7 +40,7 @@ tracks_df = pd.read_csv('Tracks-and-Beats-Test.csv')#, index_col=False)
         
 ## setting up AWS S3 client
 s3_client = resource("s3", aws_access_key_id=access_key_ID, aws_secret_access_key=secret_access_ID)
-s3_endpoint = 'eu-west-3'
+s3_endpoint = 's3.eu-west-3.amazonaws.com'
 
 # starting ID counters
 trackID = 0
