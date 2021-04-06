@@ -9,13 +9,16 @@ class SearchTracks():
     This class launches the search for all tracks of a given artist or label on SoundCloud.
     '''
     
-    def __init__(self, artists_df, tracks_df, comments_df):
+    def __init__(self, artists_df, tracks_df, comments_df, trackID, commentID):
         '''
         Initialises the class
         '''
         self.tracks_df = tracks_df
         self.comments_df = comments_df
         self.artists_df = artists_df
+        self.track_id = trackID
+        self.comment_id = commentID
+       
         
 
      
@@ -81,22 +84,22 @@ class SearchTracks():
         sleep(1)  #leave time to load, then scroll down a few times to load all tracks
         self.scraper.scroll(0, 100000)  
         sleep(1)
-        self.scraper.scroll(0, 100000)
-        sleep(1)
-        self.scraper.scroll(0, 100000)
-        sleep(1)
-        self.scraper.scroll(0, 100000)
-        sleep(1)
-        self.scraper.scroll(0, 100000)
-        sleep(1)
-        self.scraper.scroll(0, 100000)
-        sleep(1)
-        self.scraper.scroll(0, 100000)
-        sleep(1)
-        self.scraper.scroll(0, 100000)
-        sleep(1)
-        self.scraper.scroll(0, 100000)
-        sleep(1)
+        # self.scraper.scroll(0, 100000)
+        # sleep(1)
+        # self.scraper.scroll(0, 100000)
+        # sleep(1)
+        # self.scraper.scroll(0, 100000)
+        # sleep(1)
+        # self.scraper.scroll(0, 100000)
+        # sleep(1)
+        # self.scraper.scroll(0, 100000)
+        # sleep(1)
+        # self.scraper.scroll(0, 100000)
+        # sleep(1)
+        # self.scraper.scroll(0, 100000)
+        # sleep(1)
+        # self.scraper.scroll(0, 100000)
+        # sleep(1)
 
 
     def get_artist_info(self, s3_client, artistID, hostname):  
@@ -148,34 +151,34 @@ class SearchTracks():
         print(followers, 'Followers')
 
         # getting a string containing image metadata, splitting it at '"', to save the url in the dict
-        #try:
-        profile_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[1]/div/span').get_attribute('style')
-        profile_image_strings = profile_image_string.split('"')
-        profile_image_url = profile_image_strings[1]
-        self.artist_info['profile_image_url'] = profile_image_url
-        # print(profile_image_url, 'Profile Image URL')
+        try:
+            profile_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[1]/div/div[1]/div/span').get_attribute('style')
+            profile_image_strings = profile_image_string.split('"')
+            profile_image_url = profile_image_strings[1]
+            self.artist_info['profile_image_url'] = profile_image_url
+            # print(profile_image_url, 'Profile Image URL')
 
-        # saving image to cloud
-        profile_image_path = s3_save_image(profile_image_url, artistID, '', self.artist_name, '', 'profile-images', s3_client, 'sound-scraping')
-        self.artist_info['profile_image_path'] = profile_image_path
-        print('Profile img path:', profile_image_path)
-        # except:
-        #     print('no profile image')
+            # saving image to cloud
+            profile_image_path = s3_save_image(profile_image_url, artistID, '', self.artist_name, '', 'profile-images', s3_client, 'sound-scraping')
+            self.artist_info['profile_image_path'] = profile_image_path
+            print('Profile img path:', profile_image_path)
+        except:
+            print('no profile image')
 
         # getting a string containing background image metadata, splitting it at '(',')' to obtain its url
-        # try:
-        background_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div').get_attribute('style')
-        background_image_strings = background_image_string.split('")')
-        background_image_url = background_image_strings[0].split('("')[1]
-        self.artist_info['background_image_url'] = background_image_url
-        # print(background_image_url, 'BackgroundImageURL')
-        
-        # saving to cloud
-        background_image_path = s3_save_image(background_image_url, artistID, '', self.artist_name, '', 'background-images', s3_client, 'sound-scraping')
-        self.artist_info['background_image_path'] = background_image_path
-        print('Backg img path:', background_image_path)
-        # except:
-        #     print('no background image')
+        try:
+            background_image_string = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div/div[2]/div').get_attribute('style')
+            background_image_strings = background_image_string.split('")')
+            background_image_url = background_image_strings[0].split('("')[1]
+            self.artist_info['background_image_url'] = background_image_url
+            # print(background_image_url, 'BackgroundImageURL')
+            
+            # saving to cloud
+            background_image_path = s3_save_image(background_image_url, artistID, '', self.artist_name, '', 'background-images', s3_client, 'sound-scraping')
+            self.artist_info['background_image_path'] = background_image_path
+            print('Backg img path:', background_image_path)
+        except:
+            print('no background image')
 
 
         ## adding scraped data to our Artist dataframe 
@@ -188,10 +191,10 @@ class SearchTracks():
         # print(values_artists)
         artists_columns = "artist_id, artist_name, bio, location, followers, profile_image_url, profile_image_path, background_image_url, background_image_path"            
 
-        insert_row('artists', artists_columns, values_artists, hostname)
+        insert_row('artists', artists_columns, values_artists, 'artist_id', hostname)
 
 
-    def get_artist_tracks(self, s3_client, artistID, trackID, commentID, hostname):   
+    def get_artist_tracks(self, s3_client, artistID, hostname):   
         '''
         This function extracts all items in the HTML tree that contain 'soundList' information, 
         then iterates through all elements in an artist's page that contain track titles and URLs, 
@@ -200,42 +203,41 @@ class SearchTracks():
         For each track, we access the page and scrape its information and comments
         '''
 
-        # track_items = '//ul/[@class="soundList__item"]/li'
-        # print('got {} track items!'.format(len(track_items)))
+        track_items = self.scraper.driver.find_elements_by_class_name('soundList__item')
+        print('got {} track items!'.format(len(track_items)))
        
-        for t in range(2): #len(track_items)): 
+        for t in range(3): # len(track_items)): 
 
-            trackID += 1
+             # stopping after 50 tracks of same artist
+            if t >= 2:
+                break
             
             ## if not the first iteration, go back to track page before opening next one
             if t > 0:
                 self.scraper.driver.execute_script("window.history.go(-1)")
                 sleep(3)
-                self.scraper.scroll(0, 100000)
-                sleep(1)
-                self.scraper.scroll(0, 100000)
-                sleep(1)
-                self.scraper.scroll(0, 100000)
-                sleep(1)
-                self.scraper.scroll(0, 100000)
-                sleep(1)
-
-            # stopping after 50 tracks of same artist
-            if t >= 50:
-                break
+                # self.scraper.scroll(0, 100000)
+                # sleep(1)
+                # self.scraper.scroll(0, 100000)
+                # sleep(1)
+                # self.scraper.scroll(0, 100000)
+                # sleep(1)
+                # self.scraper.scroll(0, 100000)
+                # sleep(1)
             
             try:
                 title_element = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[{t+1}]/div/div/div[2]/div[1]/div/div/div[2]/a')
                 track_href = title_element.get_attribute('href')    
                 track_url = track_href 
                 track_name = title_element.find_element_by_tag_name('span').text
-            
+                self.track_id += 1
+
             except:
                 continue
 
             # storing the data in the track's dict
             self.track_dict = {
-                                'track_id': [trackID],
+                                'track_id': [self.track_id],
                                 'artist_id': [artistID],
                                 'track_name': [], 
                                 'track_url': [], 
@@ -340,13 +342,13 @@ class SearchTracks():
                 print('No image found')
                 self.track_dict['track_image_url'].append(None)
 
-        # try:   
-            # storing in cloud, saving path
-            track_image_path = s3_save_image(track_image_url, artistID, trackID, self.artist_name, track_name, 'track-images', s3_client, 'sound-scraping')
-            self.track_dict['track_image_path'].append(track_image_path)
-        # except:
-            # print('could not store image')
-            # self.track_dict['TrackImagePath'].append(None)
+            try:   
+                # storing in cloud, saving path
+                track_image_path = s3_save_image(track_image_url, artistID, self.track_id, self.artist_name, track_name, 'track-images', s3_client, 'sound-scraping')
+                self.track_dict['track_image_path'].append(track_image_path)
+            except:
+                print('could not store image')
+                self.track_dict['TrackImagePath'].append(None)
 
 
             ## finding the date of release (posting). 
@@ -419,13 +421,13 @@ class SearchTracks():
     
             for c in range(len(comment_items)):
                 
-                commentID += 1
+                self.comment_id += 1
 
                 # creating a dictionary to store information about each particular comment
                 self.comment_dict = {
-                                'track_id': [trackID],
+                                'track_id': [self.track_id],
                                 'artist_id': [artistID],
-                                'comment_id': [commentID],
+                                'comment_id': [self.comment_id],
                                 'comment': [], 
                                 'comment_date_time': [], 
                                 'track_time': [],
@@ -480,7 +482,7 @@ class SearchTracks():
                 ## adding comment to RDS table
                 columns_comment = "track_id, artist_id, comment_id, comment, comment_date_time, track_time, track_name, track_url"
                 values_comment = f"{self.comment_dict['track_id'][0]}, {self.comment_dict['artist_id'][0]}, {self.comment_dict['comment_id'][0]}, '{self.comment_dict['comment'][0]}', '{self.comment_dict['comment_date_time'][0]}', {self.comment_dict['track_time'][0]}, '{self.comment_dict['track_name'][0]}', '{self.comment_dict['track_url'][0]}'"
-                insert_row('comments', columns_comment, values_comment, hostname)
+                insert_row('comments', columns_comment, values_comment, 'comment_id', hostname)
 
                 ## creating df from comments dict and appending it to original comments df
                 temp_comments_df = pd.DataFrame.from_dict(self.comment_dict)
@@ -525,7 +527,12 @@ class SearchTracks():
             # print(values_artists)
             track_columns = "track_id, artist_id, track_name, track_url, artist_name, track_description, likes, comments, shares, plays, track_image_url, track_image_path, track_date_time, tags"            
 
-            insert_row('tracks_and_beats', track_columns, values_tracks, hostname)
+            insert_row('tracks_and_beats', track_columns, values_tracks, 'track_id', hostname)
             
-        return self.artists_df, self.tracks_df, self.comments_df, trackID, commentID, artistID
+        return self.artists_df, self.tracks_df, self.comments_df, self.track_id, self.comment_id, artistID
 
+### TRACK ID STOPPING AT 50 - FIX - Try with two tracks per artist, if t > 1 break limit
+### COMMENTS NOT SAVING - HANDLE COLUMN OF TRACK DESCR. GIVING OUT NONE? WHY COLUMN?
+### FIX REMIXER ISSUE, drop TrackDateTime column
+### TEST BEATPORT UPDATE METHOD
+### Add a column for time of scraping in each table

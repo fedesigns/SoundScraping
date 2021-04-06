@@ -137,7 +137,7 @@ def create_table(sql, hostname, table_name):
 
     cursor.close()
 
-def insert_row(table, columns, values, hostname):
+def insert_row(table, columns, values, primary_key, hostname):
     '''
     insert data into table (only accepts single insert)
     table, columns and values as strings
@@ -159,7 +159,7 @@ def insert_row(table, columns, values, hostname):
 
         # creating SQL string
         sql_str = sql.SQL(
-            f"INSERT INTO {table}({columns}) VALUES({values}) ON CONFLICT DO NOTHING")
+            f"INSERT INTO {table}({columns}) VALUES({values}) ON CONFLICT ({primary_key}) DO NOTHING")
         # print(sql_str)
         cursor.execute(sql_str)
         print('Number of parts: ', cursor.rowcount)
@@ -309,7 +309,7 @@ class TableSQL:
         
         ## Creating tables through SQL strings
         self.create_artists = ''' CREATE TABLE if not exists artists(
-            Artist_ID int, 
+            Artist_ID integer, 
             Artist_Name varchar(90), 
             Bio varchar(9000), 
             Location varchar(90), 
@@ -318,7 +318,8 @@ class TableSQL:
             Profile_Image_Path varchar(300), 
             Background_Image_URL varchar(300),	
             Background_Image_Path varchar(300),
-            PRIMARY KEY(Artist_ID)
+            PRIMARY KEY(Artist_ID),
+            UNIQUE(Artist_ID)
         )'''
 
         self.create_tracks_and_beats = ''' CREATE TABLE if not exists tracks_and_beats(
@@ -352,19 +353,21 @@ class TableSQL:
             Beatport_Track_Name varchar(90),
             Label varchar(60),
             Beatport_Release varchar(60),
-            PRIMARY KEY(Track_ID)
+            PRIMARY KEY(Track_ID),
+            UNIQUE(Track_ID)
         )'''
         
         self.create_comments = ''' CREATE TABLE if not exists comments(
-            Track_ID int,
-            Artist_ID int,
-            Comment_ID int,
-            Comment varchar(600),
-            Comment_Date_Time varchar(90),
-            Track_Time int,
-            Track_Name varchar(90),
-            Track_URL varchar(300),
-            PRIMARY KEY(Comment_ID)
+            track_id int,
+            artist_id int,
+            comment_id int,
+            comment varchar(600),
+            comment_date_time varchar(90),
+            track_time int,
+            track_name varchar(90),
+            track_url varchar(300),
+            PRIMARY KEY(comment_id),
+            UNIQUE(comment_id)
         )'''
 
     def connect(self):

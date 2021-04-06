@@ -57,9 +57,9 @@ artistID = 0
 #%%
 
 ## scraping the soundcloud page for each artist
-searcher = SearchTracks.SearchTracks(artists_df, tracks_df, comments_df)
+searcher = SearchTracks.SearchTracks(artists_df, tracks_df, comments_df, trackID, commentID)
 
-for i in range(17, 18):  # artists_df['artist_name'].count()):
+for i in range(artists_df['artist_name'].count()):
     # try:
     artist = artists_df.iloc[i, 1]
     print(artist)
@@ -72,15 +72,15 @@ for i in range(17, 18):  # artists_df['artist_name'].count()):
 
     ## getting track names and URLs
     
-    searcher.get_artist_tracks(s3_client, artistID, trackID, commentID, hostname)
+    searcher.get_artist_tracks(s3_client, artistID, hostname)
     searcher.scraper.driver.quit()
 
     #saving scraped data if error occurs
     # except:
-        # now = datetime.now()
-        # artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-        # searcher.comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
-        # searcher.tracks_df.to_csv('Tracks-and-Beats-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+    #     now = datetime.now()
+    #     artists_df.to_csv('Artists-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+    #     searcher.comments_df.to_csv('Comments-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
+    #     searcher.tracks_df.to_csv('Tracks-and-Beats-{}.csv'.format(now.strftime("%d%m%Y-%H%M%S")), index=False)
     
 now = datetime.now()
 print(searcher.artists_df)
