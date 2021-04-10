@@ -36,7 +36,7 @@ def s3_save_image(image_url, artist_id, track_id, artist_name, track_name, folde
         
             # Format the return URL of upload file in S3 Bucket
             file_url = 'https://%s.%s/%s' % (bucket, endpoint, file_key)
-            print("Attachment Successfully save in S3 Bucket url %s " % (file_url))
+            # print("Attachment Successfully save in S3 Bucket url %s " % (file_url))
             return file_url
 
         except Exception as e:
@@ -162,7 +162,7 @@ def insert_row(table, columns, values, primary_key, hostname):
             f"INSERT INTO {table}({columns}) VALUES({values}) ON CONFLICT ({primary_key}) DO NOTHING")
         # print(sql_str)
         cursor.execute(sql_str)
-        print('Number of parts: ', cursor.rowcount)
+        # print('Number of parts: ', cursor.rowcount)
         cursor.close()
 
     except (Exception, psycopg2.DatabaseError) as error:

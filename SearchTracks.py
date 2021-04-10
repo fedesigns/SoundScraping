@@ -81,26 +81,23 @@ class SearchTracks():
         except:
             print("Didn't find original profile")
 
+        
         sleep(1)  #leave time to load, then scroll down a few times to load all tracks
         self.scraper.scroll(0, 100000)  
         sleep(1)
-        # self.scraper.scroll(0, 100000)
-        # sleep(1)
-        # self.scraper.scroll(0, 100000)
-        # sleep(1)
-        # self.scraper.scroll(0, 100000)
-        # sleep(1)
-        # self.scraper.scroll(0, 100000)
-        # sleep(1)
-        # self.scraper.scroll(0, 100000)
-        # sleep(1)
-        # self.scraper.scroll(0, 100000)
-        # sleep(1)
-        # self.scraper.scroll(0, 100000)
-        # sleep(1)
-        # self.scraper.scroll(0, 100000)
-        # sleep(1)
 
+        # determining how much to scroll to laod tracks, scrolling down a few times
+        try:
+            n_tracks = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[3]/a/div').text
+            n_tracks = int(n_tracks)
+            scrolls = int((n_tracks-10)/10)
+
+            for y in range(scrolls):
+                self.scraper.scroll(0, 100000)
+                sleep(1)
+        except:
+            pass
+            
 
     def get_artist_info(self, s3_client, artistID, hostname):  
         '''
@@ -206,24 +203,30 @@ class SearchTracks():
         track_items = self.scraper.driver.find_elements_by_class_name('soundList__item')
         print('got {} track items!'.format(len(track_items)))
        
-        for t in range(3): # len(track_items)): 
+        for t in range(len(track_items)): 
 
-             # stopping after 50 tracks of same artist
-            if t >= 2:
+             # stopping after 100 tracks of same artist
+            if t >= 100:
                 break
             
             ## if not the first iteration, go back to track page before opening next one
             if t > 0:
                 self.scraper.driver.execute_script("window.history.go(-1)")
                 sleep(3)
-                # self.scraper.scroll(0, 100000)
-                # sleep(1)
-                # self.scraper.scroll(0, 100000)
-                # sleep(1)
-                # self.scraper.scroll(0, 100000)
-                # sleep(1)
-                # self.scraper.scroll(0, 100000)
-                # sleep(1)
+            
+
+                # determining how much to scroll to laod tracks, scrolling down a few times
+                try:
+                    n_tracks = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[3]/a/div').text
+                    n_tracks = int(n_tracks)
+                    scrolls = int((n_tracks-10)/10)
+
+                    for y in range(scrolls):
+                        self.scraper.scroll(0, 100000)
+                        sleep(1)
+                except:
+                    pass
+                    
             
             try:
                 title_element = self.scraper.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[4]/div[1]/div/div[2]/div/ul/li[{t+1}]/div/div/div[2]/div[1]/div/div/div[2]/a')
@@ -372,48 +375,28 @@ class SearchTracks():
                 print('No tags found')
                 self.track_dict['Tags'].append(None)
             '''
+            # determining the number of comments to decide whether to scroll to load more
 
-            ## scraping comments data. scroll to load all comments
-            sleep(1)  #leave time to load, then scroll down a few times to load all tracks
-            self.scraper.scroll(0, 100000)  ### reduce distance? will it give errors if too far?
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)  ### reduce distance? will it give errors if too far?
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)  
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
-            self.scraper.scroll(0, 100000)
-            sleep(1)
+            try:
+                comments_text = self.scraper.driver.find_element_by_class_name('commentsList__actualTitle').text            
+                comments_s = comments_text.split()                          
+                comments_n = int(comments_s[0])
+                print('comments: ', comments_n)
+
+                ## scraping comments data. scroll to load all comments
+                sleep(1)  #leave time to load, then scroll down a few times to load all tracks
+                self.scraper.scroll(0, 100000)  
+                sleep(1)
+
+                # determining the number of times we must scroll down
+                n_scrolls = int(comments_n/20)
+                for k in range(n_scrolls-1):
+                    self.scraper.scroll(0, 100000)
+                    sleep(1)
             
+            except:
+                pass
+                                                                           
             ## getting comments
             comment_items = self.scraper.driver.find_elements_by_class_name("commentsList__item")
             print('got {} comments!'.format(len(comment_items)))
@@ -531,8 +514,6 @@ class SearchTracks():
             
         return self.artists_df, self.tracks_df, self.comments_df, self.track_id, self.comment_id, artistID
 
-### TRACK ID STOPPING AT 50 - FIX - Try with two tracks per artist, if t > 1 break limit
 ### COMMENTS NOT SAVING - HANDLE COLUMN OF TRACK DESCR. GIVING OUT NONE? WHY COLUMN?
-### FIX REMIXER ISSUE, drop TrackDateTime column
+### drop TrackDateTime column?
 ### TEST BEATPORT UPDATE METHOD
-### Add a column for time of scraping in each table

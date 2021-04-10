@@ -61,7 +61,7 @@ class TrackInfo():
             
             try:
                 self.result_remixer = self.scrape.driver.find_element_by_xpath(f'//*[@id="pjax-inner-wrapper"]/section/main/div/div[4]/ul/li[{r+1}]/div[2]/p[3]/a').text
-                result_artists_all = result_artists_all + ", " + self.result_remixer
+                result_artists_all = result_artists_all + ", " + self.result_remixer 
                 
             except:
                 print('No remixer')
@@ -161,7 +161,9 @@ class TrackInfo():
                 print('No feat')
 
             try:
-                self.beat_dict['remixer'] = self.result_remixer
+                remixers = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/div[2]/span[2]/a').text
+                self.beat_dict['remixer'] = remixers
+
             except:
                 print('No remixer')
 

@@ -36,7 +36,7 @@ from CloudSaving import s3_save_image, create_table, TableSQL, pd_from_table, in
 hostname = db_endpoint
 ## reading dataframes: artists from my Spotify, comments from soundcloud, track information
 artists_df = pd.read_csv('Artists-Test.csv')
-comments_df = pd.read_csv('Comments-Test.csv')#, index_col=False)
+comments_df = pd.read_csv('Comments-Start.csv')#, index_col=False)
 tracks_df = pd.read_csv('Tracks-and-Beats-Test.csv')#, index_col=False)
         
 ## setting up AWS S3 client
