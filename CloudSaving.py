@@ -225,11 +225,11 @@ def insert_multiple_rows(table, columns, values, hostname):
         cursor = conn.cursor()
 
         cursor.execute('SELECT version()')
-        sql_str = sql.SQL(f"INSERT INTO {table}({columns}) VALUES{values}")
-        print(sql_str)
+        sql_str = sql.SQL(f"INSERT INTO {table}({columns}) VALUES {values}")
+        # print(sql_str)
 
         cursor.execute(sql_str)
-        print('Number of parts: ', cursor.rowcount)
+        # print('Number of parts: ', cursor.rowcount)
         cursor.close()
     
     except (Exception, psycopg2.DatabaseError) as error:

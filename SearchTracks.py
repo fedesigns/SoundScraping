@@ -401,7 +401,8 @@ class SearchTracks():
             comment_items = self.scraper.driver.find_elements_by_class_name("commentsList__item")
             print('got {} comments!'.format(len(comment_items)))
             self.track_dict['comments_count'].append(len(comment_items))
-    
+            sql_string = ''
+
             for c in range(len(comment_items)):
                 
                 self.comment_id += 1
@@ -414,7 +415,7 @@ class SearchTracks():
                                 'comment': [], 
                                 'comment_date_time': [], 
                                 'track_time': [],
-                                'track_name': [track_name],
+                                'track_name': [track_name.replace("'", "''")],
                                 'track_url': [track_url]
                                 }
 
@@ -463,16 +464,21 @@ class SearchTracks():
                     self.comment_dict['track_time'].append(None)
 
                 ## adding comment to RDS table
-                columns_comment = "track_id, artist_id, comment_id, comment, comment_date_time, track_time, track_name, track_url"
-                values_comment = f"{self.comment_dict['track_id'][0]}, {self.comment_dict['artist_id'][0]}, {self.comment_dict['comment_id'][0]}, '{self.comment_dict['comment'][0]}', '{self.comment_dict['comment_date_time'][0]}', {self.comment_dict['track_time'][0]}, '{self.comment_dict['track_name'][0]}', '{self.comment_dict['track_url'][0]}'"
-                insert_row('comments', columns_comment, values_comment, 'comment_id', hostname)
-
+                values_comment = f"({self.comment_dict['track_id'][0]}, {self.comment_dict['artist_id'][0]}, {self.comment_dict['comment_id'][0]}, '{self.comment_dict['comment'][0]}', '{self.comment_dict['comment_date_time'][0]}', {self.comment_dict['track_time'][0]}, '{self.comment_dict['track_name'][0]}', '{self.comment_dict['track_url'][0]}')"
+                
+                sql_string += values_comment
+                # if not last comment, add ', '
+                if c < (len(comment_items) - 1):
+                    sql_string += ', '
                 ## creating df from comments dict and appending it to original comments df
                 temp_comments_df = pd.DataFrame.from_dict(self.comment_dict)
                 self.comments_df = self.comments_df.append(temp_comments_df, ignore_index=True)
                 # print(self.comments_df)
+            
+            columns_comment = "track_id, artist_id, comment_id, comment, comment_date_time, track_time, track_name, track_url"
 
-                
+            insert_multiple_rows('comments', columns_comment, sql_string, hostname)
+
 
             ## trying to infer whether the music is a set or a track by looking at its last comment.
             ## soundcloud hides the duration element somehow as part of the waveform graphic.
