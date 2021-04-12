@@ -1,7 +1,7 @@
 import Scraper
 import pandas as pd
 from time import sleep
-from CloudSaving import s3_save_image
+from CloudSaving import s3_save_image, update_row
 
 class TrackInfo():
 
@@ -74,7 +74,7 @@ class TrackInfo():
                 break
         
         if track_found == False:
-            self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'IsTrack'] = False
+            self.tracks_df.loc[self.tracks_df['track_name']==self.track_name,'is_track'] = False
 
         if track_found == True:
             
@@ -106,21 +106,21 @@ class TrackInfo():
             try: 
                 bpm = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[3]/span[2]').text
                 self.beat_dict['bpm'] = int(bpm)
-                print('BPM: ', bpm)
+                # print('BPM: ', bpm)
             except:
                 print('No bpm')
 
             try: 
                 key = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[4]/span[2]').text
                 self.beat_dict['key'] = key
-                print('Key: ', key)
+                # print('Key: ', key)
             except:
                 print('No key')
 
             try: 
                 genre = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[5]/span[2]/a').text
                 self.beat_dict['genre'] = genre
-                print('Genre: ', genre)
+                # print('Genre: ', genre)
             except:
                 print('No genre')   
 
@@ -142,7 +142,7 @@ class TrackInfo():
                     length = int(length_strings[0]) * 3600 + int(length_strings[1]) * 60 + int(length_strings[2]) 
             
                 self.beat_dict['length'] = length
-                print('Length: ', length)
+                # print('Length: ', length)
             except:
                 print('No Length')  
             
@@ -151,7 +151,7 @@ class TrackInfo():
             try:
                 mix = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[1]/div[1]/h1[2]').text
                 self.beat_dict['mix'] = mix
-                print('Mix: ', mix)
+                # print('Mix: ', mix)
             except:
                 print('No mix information')
             
@@ -176,14 +176,14 @@ class TrackInfo():
             try:
                 label = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[6]/span[2]/a').text
                 self.beat_dict['label'] = label
-                print('Label: ', label)
+                # print('Label: ', label)
             except:
                 print('No label found')
 
             try:
                 release = self.scrape.driver.find_element_by_xpath('//*[@id="pjax-inner-wrapper"]/section/main/div[2]/div/ul[2]/li[2]/span[2]').text
                 self.beat_dict['beatport_release'] = release
-                print('Released on ', release)
+                # print('Released on ', release)
             except:
                 print('No release date found')  
 
@@ -204,8 +204,29 @@ class TrackInfo():
             self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'Label'] = self.beat_dict['Label']
             self.tracks_df.loc[self.tracks_df['TrackName']==self.track_name,'BeatportRelease'] = self.beat_dict['BeatportRelease']
             '''
+
+            # updating tracks_df for local storage and RDS table
             cols = list(self.beat_dict.keys())
             for k in range(len(cols)):
                 self.tracks_df.loc[self.tracks_df['track_name']==self.track_name, cols[k]] = self.beat_dict[cols[k]]
                 
+                col = cols[k]
+                val = str(self.beat_dict[cols[k]])
+                update_row('tracks_and_beats', col, val, 'track_id', trackID, hostname)
+                sleep(0.5)
+
+            # updating row in RDS table
+            
+            ## Adding new row to RDS track
+            # # print(self.tracks_df)
+            # values_tracks = f"{self.track_dict['track_id'][0]}, {self.track_dict['artist_id'][0]}, '{self.track_dict['track_name'][0]}', '{self.track_dict['track_url'][0]}', " + \
+            #     f"'{self.track_dict['artist_name'][0]}', '{self.track_dict['track_description'][0]}', {self.track_dict['likes'][0]}, {self.track_dict['comments_count'][0]}, " + \
+            #     f"{self.track_dict['shares'][0]}, {self.track_dict['plays'][0]}, '{self.track_dict['track_image_url'][0]}', '{self.track_dict['track_image_path'][0]}', " + \
+            #     f"'{self.track_dict['track_date_time'][0]}', '{self.track_dict['tags'][0]}'"
+            # print(values_artists)
+            # track_columns = "track_id, artist_id, track_name, track_url, artist_name, track_description, likes, comments, shares, plays, track_image_url, track_image_path, track_date_time, tags"            
+
+           
+            
+
             return self.tracks_df

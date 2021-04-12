@@ -6,7 +6,7 @@ from Credentials import db_endpoint, db_port, database, username, password, acce
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from psycopg2 import sql
-
+import pandas as pd
 
 def s3_save_image(image_url, artist_id, track_id, artist_name, track_name, folder, client, bucket='sound-scraping', endpoint = 'eu-west-3'):
 
@@ -72,7 +72,7 @@ def s3_save_image(image_url, artist_id, track_id, artist_name, track_name, folde
     ## returning a file path to appen to database
 
 
-def pd_from_table(table_name):
+def pd_from_table(table_name, hostname):
     '''
     Query data from pstgreSQL, return it as a pandas DataFrame
     Builds on Hussein Rizkana's rds_db_interact functions: https://github.com/HusseinRizkana/ChessScraper/blob/main/rds_db_interact.py
@@ -172,7 +172,7 @@ def insert_row(table, columns, values, primary_key, hostname):
         if conn is not None:
             conn.close
 
-def update_row(table, row, column, value, ref_column, ref_value, hostname):
+def update_row(table, column, value, ref_column, ref_value, hostname):
     '''
     updates the value of a single cell
     table, columns and values as strings
@@ -194,7 +194,7 @@ def update_row(table, row, column, value, ref_column, ref_value, hostname):
 
         # creating SQL string
         sql_str = sql.SQL(
-            f"UPDATE {table} SET {column} = {value} WHERE {ref_column} = {ref_value}")
+            f"UPDATE {table} SET {column} = '{value}' WHERE {ref_column} = {ref_value}")
         
         cursor.execute(sql_str)
         print('Number of updates: ', cursor.rowcount)
