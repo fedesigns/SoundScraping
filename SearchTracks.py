@@ -38,9 +38,9 @@ class SearchTracks():
         self.search_items = self.scraper.driver.get(self.search_url)
         sleep(3)
         self.artist_href = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div/div[3]/div/div/div/ul/li[1]/div/div/div/h2/a').get_attribute('href')
-        print(self.artist_href)
+        # print(self.artist_href)
         self.artist_url = f"{self.artist_href}/tracks" 
-        print(self.artist_url)
+        # print(self.artist_url)
  
         # getting all elements in the page
         self.artist_items = self.scraper.driver.get(self.artist_url)
@@ -52,7 +52,7 @@ class SearchTracks():
             
             ## checking if we didn't land on a fake profile (with less than 1000 followers)
             followers_string_test = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[1]/a').get_attribute('title')
-            print(followers_string_test[0])
+            # print(followers_string_test[0])
             followers_strings_test = followers_string_test.split()
             
             # if profile has less than 1000 followers, try next result up to 4 times
@@ -66,7 +66,7 @@ class SearchTracks():
 
                     # checking if we didn't land on a fake profile (with less than 1000 followers)
                     followers_string_test = self.scraper.driver.find_element_by_xpath('//*[@id="content"]/div/div[4]/div[2]/div/article[1]/table/tbody/tr/td[1]/a').get_attribute('title')
-                    print(followers_string_test[0])
+                    # print(followers_string_test[0])
                     followers_strings_test = followers_string_test.split()
                     if len(followers_strings_test[0]) < 4:
                         continue
@@ -510,8 +510,8 @@ class SearchTracks():
             ## Adding new row to RDS track
             # print(self.tracks_df)
             values_tracks = f"{self.track_dict['track_id'][0]}, {self.track_dict['artist_id'][0]}, '{self.track_dict['track_name'][0]}', '{self.track_dict['track_url'][0]}', " + \
-                f"'{self.track_dict['artist_name'][0]}', '{self.track_dict['track_description'][0]}', {self.track_dict['likes'][0]}, {self.track_dict['comments_count'][0]}, " + \
-                f"{self.track_dict['shares'][0]}, {self.track_dict['plays'][0]}, '{self.track_dict['track_image_url'][0]}', '{self.track_dict['track_image_path'][0]}', " + \
+                f"'{self.track_dict['artist_name'][0]}', '{self.track_dict['track_description'][0]}', '{self.track_dict['likes'][0]}', '{self.track_dict['comments_count'][0]}', " + \
+                f"'{self.track_dict['shares'][0]}', '{self.track_dict['plays'][0]}', '{self.track_dict['track_image_url'][0]}', '{self.track_dict['track_image_path'][0]}', " + \
                 f"'{self.track_dict['track_date_time'][0]}', '{self.track_dict['tags'][0]}'"
             # print(values_artists)
             track_columns = "track_id, artist_id, track_name, track_url, artist_name, track_description, likes, comments, shares, plays, track_image_url, track_image_path, track_date_time, tags"            

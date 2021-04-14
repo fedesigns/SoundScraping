@@ -86,7 +86,7 @@ def pd_from_table(table_name, hostname):
                                 user=username,
                                 password=password)
 
-        sql_string = f"SELECT * FROM {table_name}"
+        sql_string = f"SELECT * FROM {table_name} ORDER BY track_id asc"
 
         # read values to DF
         df = pd.read_sql_query(sql=sql_string, con=conn)

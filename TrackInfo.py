@@ -209,7 +209,8 @@ class TrackInfo():
             cols = list(self.beat_dict.keys())
             for k in range(len(cols)):
                 self.tracks_df.loc[self.tracks_df['track_name']==self.track_name, cols[k]] = self.beat_dict[cols[k]]
-                
+                if cols[k] == 'is_track':
+                    continue
                 col = cols[k]
                 val = str(self.beat_dict[cols[k]])
                 update_row('tracks_and_beats', col, val, 'track_id', trackID, hostname)

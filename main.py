@@ -50,16 +50,16 @@ create_table(tables.create_tracks_and_beats, hostname, 'tracks_and_beats')
 create_table(tables.create_comments, hostname, 'comments')
 
 # starting ID counters
-trackID = 0
-commentID = 0
-artistID = 0
+trackID = 4664
+commentID = 197649
+artistID = 120
 
 #%%
 
 ## scraping the soundcloud page for each artist
 searcher = SearchTracks.SearchTracks(artists_df, tracks_df, comments_df, trackID, commentID)
 
-for i in range(artists_df['artist_name'].count()):
+for i in range(120, artists_df['artist_name'].count()):
     try:
         artist = artists_df.iloc[i, 1]
         print(artist)
