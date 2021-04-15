@@ -95,6 +95,7 @@ searcher.tracks_df.to_csv('Tracks-and-Beats-Full-{}.csv'.format(now.strftime("%d
 # %%
 
 ## Scraping Beatport
+### Use main-beats.py to scrape in parallel instead
 scraper = TrackInfo.TrackInfo(searcher.tracks_df)
 
 for j in range(searcher.tracks_df['track_name'].count()):
