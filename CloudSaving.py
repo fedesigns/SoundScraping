@@ -370,6 +370,19 @@ class TableSQL:
             UNIQUE(comment_id)
         )'''
 
+        # need to check data types for audio features
+        self.create_track = f''' CREATE TABLE if not exists audio_features(
+            track_id int,
+            artist_id int,
+            track_time int,
+            zero_cross_rate float,
+            entropy,
+            entropy_of_energy,
+            
+            PRIMARY KEY(track_id),
+            UNIQUE(track_id)
+        )'''
+
     def connect(self):
         conn = None
         try:
